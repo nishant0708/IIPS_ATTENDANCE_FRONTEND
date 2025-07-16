@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import './Dashboard.css';
 import Navbar from '../Navbar/Navbar';
 import axios from 'axios';
-import { subjectMapping } from '../utils/subjectMapping';
 import Loader from '../Loader/Loader';
 import AlertModal from '../AlertModal/AlertModal';
 
@@ -20,6 +19,7 @@ const Dashboard = () => {
   const [isError, setIsError] = useState(false);
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [availableSemesters, setAvailableSemesters] = useState([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
 
   // Get current date in IST format
   const getCurrentDateIST = () => {
@@ -32,56 +32,85 @@ const Dashboard = () => {
 
   const [attendanceDate, setAttendanceDate] = useState(getCurrentDateIST());
 
-  // Map from display course names to subjectMapping keys
-  const courseKeyMap = {
-    'MTECH': 'mtech',
-    'MCA': 'mca',
-    'MBA(MS)': 'mba_sem',
-    'MBA(ESHIP)': 'mba_es',
-    'MBA(APR)': 'mba_apr',
-    'MBA(TM)': 'mba_tm',
-    'MBA(FT)': 'mba_ft',
-    'BCOM': 'bcom'
+  // Course configuration with years
+  const courseConfig = {
+    'MTECH(IT)': { years: 5, displayName: 'MTECH(IT)' },
+    'MCA': { years: 5, displayName: 'MCA' },
+    'MTECH(CS)': { years: 5, displayName: 'MTECH(CS)' },
+    'MBA(MS)-5yrs': { years: 5, displayName: 'MBA(MS)-5yrs' },
+    'MBA(MS)-2Yrs': { years: 2, displayName: 'MBA(MS)-2Yrs' },
+    'MBA(ESHIP)': { years: 2, displayName: 'MBA(ESHIP)' },
+    'MBA(APR)': { years: 2, displayName: 'MBA(APR)' },
+    'MBA(TM)': { years: 5, displayName: 'MBA(TM)' },
+    'BCOM': { years: 4, displayName: 'BCOM' }
   };
 
-  // Function to get available semesters for a course
+  // Function to get available semesters based on course years
   const getAvailableSemesters = (courseKey) => {
-    if (!courseKey) return [];
+    if (!courseKey || !courseConfig[courseKey]) return [];
+    
+    const years = courseConfig[courseKey].years;
+    const totalSemesters = years * 2; // Each year has 2 semesters
     
     const availableSems = [];
-    for (let i = 1; i <= 10; i++) {
-      const key = `${courseKey}_${i}`;
-      if (subjectMapping[key]) {
-        availableSems.push(i);
-      }
+    for (let i = 1; i <= Math.min(totalSemesters, 10); i++) {
+      availableSems.push(i);
     }
     return availableSems;
   };
 
+  // Function to fetch subjects from API
+  const fetchSubjects = async (courseName, semesterNum) => {
+    if (!courseName || !semesterNum) return;
+    
+    setLoadingSubjects(true);
+    try {
+      const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/attendance/getsubjects`, {
+        course: courseName,
+        semester: semesterNum
+      });
+      
+      setSubjects(response.data || []);
+      setSubject(''); // Reset subject selection
+      
+      if (response.data.length === 0) {
+        showAlert('No subjects found for the selected course and semester', true);
+      }
+    } catch (error) {
+      console.error('Error fetching subjects:', error);
+      showAlert('Failed to fetch subjects. Please try again.', true);
+      setSubjects([]);
+    } finally {
+      setLoadingSubjects(false);
+    }
+  };
+
   useEffect(() => {
     if (course) {
-      const courseKey = courseKeyMap[course];
-      const semesters = getAvailableSemesters(courseKey);
+      const semesters = getAvailableSemesters(course);
       setAvailableSemesters(semesters);
       
       // Reset semester if the current one isn't available
       if (semester && !semesters.includes(parseInt(semester))) {
         setSemester('');
+        setSubjects([]);
+        setSubject('');
       }
     } else {
       setAvailableSemesters([]);
+      setSubjects([]);
+      setSubject('');
     }
   }, [course]);
 
   useEffect(() => {
     if (course && semester) {
-      const courseKey = courseKeyMap[course];
-      const key = `${courseKey}_${semester}`;
-      setSubjects(subjectMapping[key] || []);
-      setSubject('');
+      fetchSubjects(course, semester);
+      setStudents([]); // Reset students when course/semester changes
     } else {
       setSubjects([]);
       setSubject('');
+      setStudents([]);
     }
   }, [course, semester]);
 
@@ -89,11 +118,14 @@ const Dashboard = () => {
     setCourse(e.target.value);
     setSemester('');
     setStudents([]);
+    setSubjects([]);
+    setSubject('');
   };
 
   const handleSemesterChange = (e) => {
     setSemester(e.target.value);
     setStudents([]);
+    setSubject('');
   };
 
   const handleSubjectChange = (e) => {
@@ -121,12 +153,12 @@ const Dashboard = () => {
     try {
       const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/attendance/getByCourseAndSemester`, {
         className: course,
-        semester: `${semester}th_sem`
+        semester: semester
       });
       
       setStudents(response.data);
       
-      // Initialize attendance map with all students present by default
+      // Initialize attendance map with all students absent by default
       const initialAttendance = {};
       response.data.forEach(student => {
         initialAttendance[student._id] = false;
@@ -234,14 +266,9 @@ const Dashboard = () => {
               className="form-select"
             >
               <option value="">Select Course</option>
-              <option value="MTECH">MTECH</option>
-              <option value="MCA">MCA</option>
-              <option value="MBA(MS)">MBA(MS)</option>
-              <option value="MBA(ESHIP)">MBA(ESHIP)</option>
-              <option value="MBA(APR)">MBA(APR)</option>
-              <option value="MBA(TM)">MBA(TM)</option>
-              <option value="MBA(FT)">MBA(FT)</option>
-              <option value="BCOM">BCOM</option>
+              {Object.entries(courseConfig).map(([key, config]) => (
+                <option key={key} value={key}>{config.displayName}</option>
+              ))}
             </select>
           </div>
           
@@ -268,11 +295,15 @@ const Dashboard = () => {
               value={subject} 
               onChange={handleSubjectChange}
               className="form-select"
-              disabled={!semester || !course}
+              disabled={!semester || !course || loadingSubjects}
             >
-              <option value="">Select Subject</option>
+              <option value="">
+                {loadingSubjects ? 'Loading subjects...' : 'Select Subject'}
+              </option>
               {subjects.map(sub => (
-                <option key={sub.code} value={sub.code}>{sub.name}</option>
+                <option key={sub.code || sub._id} value={sub.code || sub._id}>
+                  {sub.name}
+                </option>
               ))}
             </select>
           </div>
@@ -300,7 +331,7 @@ const Dashboard = () => {
         {students.length > 0 && (
           <div className="attendance-table-container">
             <div className="attendance-info">
-              <h3>Marking attendance for: {subject} - {subjects.find(s => s.code === subject)?.name}</h3>
+              <h3>Marking attendance for: {subject} - {subjects.find(s => (s.code || s._id) === subject)?.name}</h3>
               <p>Date: {new Date(attendanceDate).toLocaleDateString()}</p>
             </div>
             
