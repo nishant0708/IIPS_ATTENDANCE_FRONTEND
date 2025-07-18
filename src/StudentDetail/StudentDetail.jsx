@@ -27,6 +27,12 @@ const StudentDetail = () => {
       fetchAttendanceDetails();
     }
   }, [studentId, subject, semester, academicYear]);
+  useEffect(() => {
+  window.scrollTo(0, 0);
+}, []);
+
+window.scrollTo({ top: 0, behavior: 'smooth' });
+
 
   const fetchStudentInfo = async () => {
     setLoading(true);
@@ -140,23 +146,23 @@ const StudentDetail = () => {
               </div>
               <div className="info-item">
                 <span className="info-label">Enrollment Number:</span>
-                <span className="info-value">{studentInfo.enrollmentNumber}</span>
+                <span className="info-value">{studentInfo.enrollmentNumber || "N/A"}</span>
               </div>
               <div className="info-item">
                 <span className="info-label">Email:</span>
-                <span className="info-value">{studentInfo.email}</span>
+                <span className="info-value">{studentInfo.email || "N/A"}</span>
               </div>
               <div className="info-item">
                 <span className="info-label">Phone:</span>
-                <span className="info-value">{studentInfo.phoneNumber}</span>
+                <span className="info-value">{studentInfo.phoneNumber || "N/A"}</span>
               </div>
               <div className="info-item">
                 <span className="info-label">Course:</span>
-                <span className="info-value">{studentInfo.className}</span>
+                <span className="info-value">{studentInfo.className || "N/A"}</span>
               </div>
               <div className="info-item">
                 <span className="info-label">Semester:</span>
-                <span className="info-value">{semester?.replace('th_sem', '')}</span>
+                <span className="info-value">{semester?.replace('th_sem', '') || "N/A"}</span>
               </div>
             </div>
           </div>

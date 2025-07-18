@@ -241,11 +241,16 @@
 .record_btn-notify:hover {
   background-color: var(--button-submit-hover-color-light);
 }
+.record_btn-notify:disabled ,.record_container.dark .record_btn-notify:disabled{
 
-.record_container.dark .record_btn-export:hover,
+  background-color: #555555;
+  cursor: not-allowed;
+}
+
+/* .record_container.dark .record_btn-export:hover,
 .record_container.dark .record_btn-notify:hover {
   background-color: var(--button-submit-hover-color-dark);
-}
+} */
 
 /* Responsive styles */
 @media screen and (max-width: 768px) {
