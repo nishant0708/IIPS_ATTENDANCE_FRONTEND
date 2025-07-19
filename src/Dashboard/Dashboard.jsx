@@ -9,6 +9,8 @@ const Dashboard = () => {
   const [course, setCourse] = useState("");
   const [semester, setSemester] = useState("");
   const [subject, setSubject] = useState("");
+  const [specialization, setSpecialization] = useState("");
+  const [section, setSection] = useState(""); // New section state
   const [subjects, setSubjects] = useState([]);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -20,6 +22,30 @@ const Dashboard = () => {
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
   const [availableSemesters, setAvailableSemesters] = useState([]);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
+
+  // Specialization options for MBA(MS) courses
+  const specializationOptions = [
+    { value: "Core", label: "Core" },
+    { value: "FA", label: "FA" },
+    { value: "BA", label: "BA" },
+    { value: "FB", label: "FB" },
+    { value: "HA", label: "HA" },
+    { value: "MA", label: "MA" }
+  ];
+
+  // Section options
+  const sectionOptions = [
+    { value: "A", label: "A" },
+    { value: "B", label: "B" }
+  ];
+
+  // Check if current course requires specialization
+ const requiresSpecialization = (courseKey, semester) => {
+  if (courseKey === "MBA(MS)-2Yrs") return true;
+  if (courseKey === "MBA(MS)-5yrs" && parseInt(semester) >= 7) return true;
+  return false;
+};
+
 
   // Get current date in IST format
   const getCurrentDateIST = () => {
@@ -85,6 +111,7 @@ const Dashboard = () => {
         {
           course: courseConfig[course]?.displayName,
           semester: semesterNum,
+          specialization: requiresSpecialization(course,semester) ? specialization : null,
         }
       );
 
@@ -117,23 +144,45 @@ const Dashboard = () => {
         setSubjects([]);
         setSubject("");
       }
+
+      // Reset specialization if course doesn't require it
+      if (!requiresSpecialization(course, semester)) {
+        setSpecialization("");
+      }
     } else {
       setAvailableSemesters([]);
       setSubjects([]);
       setSubject("");
+      setSpecialization("");
     }
   }, [course]);
 
-  useEffect(() => {
-    if (course && semester) {
-      fetchSubjects(course, semester);
-      setStudents([]); // Reset students when course/semester changes
+useEffect(() => {
+  if (course && semester) {
+    // Check if specialization is required for this course
+    if (requiresSpecialization(course, semester)) {
+      // Only fetch subjects if specialization is also selected
+      if (specialization) {
+        fetchSubjects(course, semester);
+      } else {
+        // Clear subjects and students if specialization is required but not selected
+        setSubjects([]);
+        setSubject("");
+        setStudents([]);
+      }
     } else {
-      setSubjects([]);
-      setSubject("");
-      setStudents([]);
+      // Fetch subjects directly if no specialization is required
+      fetchSubjects(course, semester);
     }
-  }, [course, semester]);
+    
+    // Reset students when course/semester changes (moved outside the specialization check)
+    setStudents([]);
+  } else {
+    setSubjects([]);
+    setSubject("");
+    setStudents([]);
+  }
+}, [course, semester, specialization]); // Added specialization as dependen
 
   const handleCourseChange = (e) => {
     setCourse(e.target.value);
@@ -141,6 +190,8 @@ const Dashboard = () => {
     setStudents([]);
     setSubjects([]);
     setSubject("");
+    setSpecialization("");
+    setSection(""); // Reset section when course changes
   };
 
   const handleSemesterChange = (e) => {
@@ -151,6 +202,16 @@ const Dashboard = () => {
 
   const handleSubjectChange = (e) => {
     setSubject(e.target.value);
+  };
+
+  const handleSpecializationChange = (e) => {
+    setSpecialization(e.target.value);
+    setStudents([]); // Reset students when specialization changes
+  };
+
+  const handleSectionChange = (e) => {
+    setSection(e.target.value);
+    setStudents([]); // Reset students when section changes
   };
 
   const handleDateChange = (e) => {
@@ -179,15 +240,29 @@ const Dashboard = () => {
       return;
     }
 
+    // Check if specialization is required but not selected
+    if (requiresSpecialization(course,semester) && !specialization) {
+      showAlert("Please select a Specialization", true);
+      return;
+    }
+
     setLoading(true);
 
     try {
+      const requestData = {
+        className: courseConfig[course]?.displayName,
+        semester_id: semester,
+        section: section || null, // Send null if section is not selected
+      };
+
+      // Add specialization to request if required
+      if (requiresSpecialization(course,semester) && specialization) {
+        requestData.specialization = specialization;
+      }
+
       const response = await axios.post(
         `${process.env.REACT_APP_BACKEND_URL}/attendance/getByCourseAndSemester`,
-        {
-          className: courseConfig[course]?.displayName,
-          semester_id: semester,
-        }
+        requestData
       );
 
       setStudents(response.data);
@@ -251,6 +326,7 @@ const Dashboard = () => {
         semId: semester,
         subjectCode: subject.trim(),
         date: new Date(attendanceDate).toISOString(),
+        section: section || null, // Send null if section is not selected
         attendance: Object.entries(attendanceMap).map(
           ([studentId, isPresent]) => ({
             studentId,
@@ -258,6 +334,11 @@ const Dashboard = () => {
           })
         ),
       };
+
+      // Add specialization to attendance data if required
+      if (requiresSpecialization(course,semester) && specialization) {
+        attendanceData.specialization = specialization;
+      }
 
       await axios.post(
         `${process.env.REACT_APP_BACKEND_URL}/attendance/markattendance`,
@@ -316,7 +397,7 @@ const Dashboard = () => {
               {Object.entries(courseConfig).map(([key]) => (
                 <option key={key} value={key}>
                   {key}
-                </option> // 👈 show original key
+                </option>
               ))}
             </select>
           </div>
@@ -334,6 +415,45 @@ const Dashboard = () => {
               {availableSemesters.map((sem) => (
                 <option key={sem} value={sem}>
                   {sem}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Specialization dropdown - only shown for MBA(MS) courses */}
+          {requiresSpecialization(course, semester) && (
+            <div className="form-group">
+              <label htmlFor="specialization">Specialization:</label>
+              <select
+                id="specialization"
+                value={specialization}
+                onChange={handleSpecializationChange}
+                className="form-select"
+                disabled={!course}
+              >
+                <option value="">Select Specialization</option>
+                {specializationOptions.map((spec) => (
+                  <option key={spec.value} value={spec.value}>
+                    {spec.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Section dropdown - optional field */}
+          <div className="form-group">
+            <label htmlFor="section">Section (Optional):</label>
+            <select
+              id="section"
+              value={section}
+              onChange={handleSectionChange}
+              className="form-select"
+            >
+              <option value="">Select Section</option>
+              {sectionOptions.map((sec) => (
+                <option key={sec.value} value={sec.value}>
+                  {sec.label}
                 </option>
               ))}
             </select>
@@ -378,7 +498,13 @@ const Dashboard = () => {
           <button
             className="btn-fetch"
             onClick={fetchStudents}
-            disabled={loading || !course || !semester || !subject}
+            disabled={
+              loading || 
+              !course || 
+              !semester || 
+              !subject || 
+              (requiresSpecialization(course,semester) && !specialization)
+            }
           >
             {loading ? "Loading..." : "Get Students"}
           </button>
@@ -387,9 +513,15 @@ const Dashboard = () => {
         {students.length > 0 && (
           <div className="attendance-table-container">
             <div className="attendance-info">
-             <h3>
-  Marking attendance for: {subject} - {subjects.find(s => s.Sub_Code === subject)?.Sub_Name}
-</h3>
+              <h3>
+                Marking attendance for: {subject} - {subjects.find(s => s.Sub_Code === subject)?.Sub_Name}
+                {requiresSpecialization(course,semester) && specialization && (
+                  <span> (Specialization: {specialization})</span>
+                )}
+                {section && (
+                  <span> (Section: {section})</span>
+                )}
+              </h3>
               <p>Date: {new Date(attendanceDate).toLocaleDateString()}</p>
             </div>
 

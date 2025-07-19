@@ -48,28 +48,34 @@ window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const fetchAttendanceDetails = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get(
-        `${process.env.REACT_APP_BACKEND_URL}/attendance/detail/${studentId}/${subject}/${semester}/${academicYear}`
-      );
-      
-      setAttendanceRecords(response.data);
-      
-      // Calculate summary
-      const present = response.data.filter(record => record.present).length;
-      const total = response.data.length;
-      const absent = total - present;
-      const percentage = total ? ((present / total) * 100).toFixed(2) : 0;
-      
-      setSummary({ present, absent, total, percentage });
-    } catch (error) {
-      console.error('Error fetching attendance details:', error);
-      showAlert('Unable to fetch attendance details, or no class was conducted', true);
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  try {
+    const params = new URLSearchParams();
+    if (location.state?.specialization) {
+      params.append('specialization', location.state.specialization);
     }
-  };
+    
+    const queryString = params.toString();
+    const url = `${process.env.REACT_APP_BACKEND_URL}/attendance/detail/${studentId}/${subject}/${semester}/${academicYear}${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await axios.get(url);
+    
+    setAttendanceRecords(response.data);
+    
+    // Calculate summary
+    const present = response.data.filter(record => record.present).length;
+    const total = response.data.length;
+    const absent = total - present;
+    const percentage = total ? ((present / total) * 100).toFixed(2) : 0;
+    
+    setSummary({ present, absent, total, percentage });
+  } catch (error) {
+    console.error('Error fetching attendance details:', error);
+    showAlert('Unable to fetch attendance details, or no class was conducted', true);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const showAlert = (msg, error = false) => {
     setModalMessage(msg);

@@ -14,6 +14,8 @@ const Record = () => {
   const [course, setCourse] = useState("");
   const [semester, setSemester] = useState("");
   const [subject, setSubject] = useState("");
+  const [specialization, setSpecialization] = useState("");
+  const [section, setSection] = useState(""); // New section state
   const [subjects, setSubjects] = useState([]);
   const [academicYear, setAcademicYear] = useState("");
   const [attendanceSummary, setAttendanceSummary] = useState([]);
@@ -31,6 +33,32 @@ const Record = () => {
   
   // New state for caching subjects
   const [subjectsCache, setSubjectsCache] = useState({});
+
+  // Specialization options for MBA(MS) courses
+  const specializationOptions = [
+    { value: "Core", label: "Core" },
+    { value: "FA", label: "FA" },
+    { value: "BA", label: "BA" },
+    { value: "FB", label: "FB" },
+    { value: "HA", label: "HA" },
+    { value: "MA", label: "MA" }
+  ];
+
+  // Section options
+  const sectionOptions = [
+    { value: "A", label: "A" },
+    { value: "B", label: "B" }
+  ];
+
+  // ✅ FIXED: Updated function to properly check specialization requirements
+  const requiresSpecialization = (courseKey, semesterNum) => {
+    if (!courseKey || !semesterNum) return false;
+    const semesterNumber = parseInt(semesterNum);
+    
+    if (courseKey === "MBA(MS)-2Yrs") return true;
+    if (courseKey === "MBA(MS)-5yrs" && semesterNumber >= 7) return true;
+    return false;
+  };
 
   // Course configuration with years - same as Dashboard
   const courseConfig = {
@@ -59,9 +87,9 @@ const Record = () => {
     return availableSems;
   };
 
-  // Function to get cache key for subjects
-  const getSubjectsCacheKey = (courseName, semesterNum) => {
-    return `${courseName}_${semesterNum}`;
+  // Function to get cache key for subjects (now includes specialization and section)
+  const getSubjectsCacheKey = (courseName, semesterNum, specializationValue = "", sectionValue = "") => {
+    return `${courseName}_${semesterNum}_${specializationValue}_${sectionValue}`;
   };
 
   // Load subjects cache from localStorage
@@ -85,20 +113,34 @@ const Record = () => {
     }
   };
 
-  // Function to fetch subjects from API with caching
-  const fetchSubjects = async (courseName, semesterNum) => {
+  // ✅ FIXED: Updated fetchSubjects function with section support
+  const fetchSubjects = async (courseName, semesterNum, specializationValue = "", sectionValue = "", forceRefresh = false) => {
     if (!courseName || !semesterNum) return;
 
-    const cacheKey = getSubjectsCacheKey(courseName, semesterNum);
+    // For MBA(MS) courses, specialization is required only for specific semesters
+    if (requiresSpecialization(courseName, semesterNum) && !specializationValue) {
+      console.log("Specialization required but not provided, clearing subjects");
+      setSubjects([]);
+      setSubject("");
+      return;
+    }
+
+    const cacheKey = getSubjectsCacheKey(courseName, semesterNum, specializationValue, sectionValue);
+    console.log("🔍 Fetching subjects with cache key:", cacheKey);
+    console.log("🔍 Current cache keys:", Object.keys(subjectsCache));
+    console.log("🔍 Force refresh:", forceRefresh);
     
-    // Check if subjects are already cached
-    if (subjectsCache[cacheKey]) {
-      console.log("Using cached subjects for", cacheKey);
+    // Check if subjects are already cached and not forcing refresh
+    if (subjectsCache[cacheKey] && !forceRefresh) {
+      console.log("✅ Using cached subjects for", cacheKey);
       setSubjects(subjectsCache[cacheKey]);
       
       // Load saved subject if it exists in cache
       const savedFilters = JSON.parse(localStorage.getItem("attendanceFilters")) || {};
-      if (savedFilters.subject && savedFilters.course === courseName && savedFilters.semester === semesterNum) {
+      if (savedFilters.subject && savedFilters.course === courseName && 
+          savedFilters.semester === semesterNum && 
+          savedFilters.specialization === specializationValue &&
+          savedFilters.section === sectionValue) {
         const subjectExists = subjectsCache[cacheKey].some(
           s => (s.Sub_Code || s._id) === savedFilters.subject
         );
@@ -109,17 +151,33 @@ const Record = () => {
       return;
     }
 
+    console.log("🚀 Fetching subjects from API for", cacheKey);
     setLoadingSubjects(true);
     try {
+      const requestData = {
+        course: courseConfig[courseName]?.displayName,
+        semester: semesterNum,
+      };
+
+      // Add specialization to request if required
+      if (requiresSpecialization(courseName, semesterNum) && specializationValue) {
+        requestData.specialization = specializationValue;
+      }
+
+      // Add section to request if selected (convert empty string to null)
+      if (sectionValue) {
+        requestData.section = sectionValue;
+      }
+
+      console.log("📤 Request data:", requestData);
+
       const response = await axios.post(
         `${process.env.REACT_APP_BACKEND_URL}/attendance/getsubjects`,
-        {
-          course: courseConfig[courseName]?.displayName,
-          semester: semesterNum,
-        }
+        requestData
       );
 
       const subjectsData = response.data || [];
+      console.log("📥 Subjects received:", subjectsData.length);
       setSubjects(subjectsData);
       
       // Cache the subjects
@@ -132,7 +190,10 @@ const Record = () => {
 
       // Load saved subject if it exists in the new data
       const savedFilters = JSON.parse(localStorage.getItem("attendanceFilters")) || {};
-      if (savedFilters.subject && savedFilters.course === courseName && savedFilters.semester === semesterNum) {
+      if (savedFilters.subject && savedFilters.course === courseName && 
+          savedFilters.semester === semesterNum && 
+          savedFilters.specialization === specializationValue &&
+          savedFilters.section === sectionValue) {
         const subjectExists = subjectsData.some(
           s => (s.Sub_Code || s._id) === savedFilters.subject
         );
@@ -152,7 +213,7 @@ const Record = () => {
         );
       }
     } catch (error) {
-      console.error("Error fetching subjects:", error);
+      console.error("❌ Error fetching subjects:", error);
       showAlert("Failed to fetch subjects. Please try again.", true);
       setSubjects([]);
     } finally {
@@ -177,7 +238,7 @@ const Record = () => {
     loadSubjectsCache();
   }, []);
 
-  // Update available semesters when course changes - same as Dashboard
+  // ✅ FIXED: Updated available semesters effect with proper specialization reset
   useEffect(() => {
     if (course) {
       const semesters = getAvailableSemesters(course);
@@ -189,82 +250,184 @@ const Record = () => {
         setSubjects([]);
         setSubject("");
       }
+
+      // ✅ FIXED: Reset specialization if course doesn't require it for current semester
+      if (!requiresSpecialization(course, semester)) {
+        setSpecialization("");
+      }
     } else {
       setAvailableSemesters([]);
       setSubjects([]);
       setSubject("");
+      setSpecialization("");
+      setSection("");
     }
-  }, [course]);
+  }, [course, semester]); // Added semester to dependencies
 
-  // Update subjects when course or semester changes
+  // ✅ FIXED: Updated subjects fetching effect with section support
   useEffect(() => {
+    console.log("🔄 Subjects effect triggered:", { course, semester, specialization, section });
+    
     if (course && semester) {
-      fetchSubjects(course, semester);
-      setAttendanceSummary([]); // Reset attendance summary when course/semester changes
+      if (requiresSpecialization(course, semester)) {
+        if (specialization) {
+          console.log("📚 Fetching subjects with specialization and section:", specialization, section);
+          fetchSubjects(course, semester, specialization, section);
+        } else {
+          console.log("⏳ Waiting for specialization selection");
+          setSubjects([]);
+          setSubject("");
+        }
+      } else {
+        console.log("📚 Fetching subjects with section (no specialization required):", section);
+        fetchSubjects(course, semester, "", section);
+      }
+      setAttendanceSummary([]); // Reset attendance summary when filters change
     } else {
+      console.log("❌ Missing course or semester");
       setSubjects([]);
       setSubject("");
       setAttendanceSummary([]);
     }
-  }, [course, semester, subjectsCache]); // Added subjectsCache as dependency
+  }, [course, semester, specialization, section]); // Added section to dependencies
 
-  // Load saved filters on component mount only once
+  // ✅ FIXED: Load saved filters on component mount only once with section support
   useEffect(() => {
-    const savedFilters =
-      JSON.parse(localStorage.getItem("attendanceFilters")) || {};
+    const savedFilters = JSON.parse(localStorage.getItem("attendanceFilters")) || {};
+    console.log("💾 Loading saved filters:", savedFilters);
 
     if (savedFilters.course && !filtersLoaded.current) {
+      console.log("🔄 Restoring saved filters");
       setCourse(savedFilters.course);
-      if (savedFilters.semester) setSemester(savedFilters.semester);
-      if (savedFilters.academicYear) setAcademicYear(savedFilters.academicYear);
-      // Note: Subject will be loaded in fetchSubjects function
+      
+      if (savedFilters.semester) {
+        setSemester(savedFilters.semester);
+      }
+      
+      // ✅ FIX: Properly handle specialization restoration with semester check
+      if (savedFilters.specialization && savedFilters.semester && 
+          requiresSpecialization(savedFilters.course, savedFilters.semester)) {
+        console.log("🎯 Restoring specialization:", savedFilters.specialization);
+        setSpecialization(savedFilters.specialization);
+      }
+
+      // Restore section if saved
+      if (savedFilters.section) {
+        console.log("📚 Restoring section:", savedFilters.section);
+        setSection(savedFilters.section);
+      }
+      
+      if (savedFilters.academicYear) {
+        setAcademicYear(savedFilters.academicYear);
+      }
 
       filtersLoaded.current = true;
 
       // Set flag to fetch data if coming from detail page
       if (location.state?.returnFromDetail) {
+        console.log("🔙 Returning from detail page, will fetch data");
         shouldFetchData.current = true;
       }
     }
   }, [location.state]);
 
-  // Auto fetch data when all prerequisites are met and flagged to fetch
+  // ✅ FIXED: Updated auto-fetch effect with section support
   useEffect(() => {
-    const allFiltersSelected = course && semester && subject && academicYear;
+    const allFiltersSelected = course && semester && subject && academicYear &&
+      (!requiresSpecialization(course, semester) || specialization);
+
+    console.log("🎯 Auto-fetch check:", { 
+      allFiltersSelected, 
+      shouldFetch: shouldFetchData.current,
+      course, 
+      semester, 
+      subject, 
+      academicYear, 
+      specialization,
+      section,
+      requiresSpec: requiresSpecialization(course, semester)
+    });
 
     if (allFiltersSelected && shouldFetchData.current) {
+      console.log("🚀 Auto-fetching attendance data");
       fetchAttendanceSummary();
       shouldFetchData.current = false;
     }
-  }, [course, semester, subject, academicYear]);
+  }, [course, semester, subject, academicYear, specialization, section, subjects]); // Added section to dependencies
 
-  // Save filters to localStorage whenever they change
+  // Save filters to localStorage whenever they change (including section)
   useEffect(() => {
-    if (course || semester || subject || academicYear) {
+    if (course || semester || subject || academicYear || specialization || section) {
       const filtersToSave = {
         course,
         semester,
         subject,
         academicYear,
+        specialization,
+        section,
       };
+      console.log("💾 Saving filters to localStorage:", filtersToSave);
       localStorage.setItem("attendanceFilters", JSON.stringify(filtersToSave));
     }
-  }, [course, semester, subject, academicYear]);
+  }, [course, semester, subject, academicYear, specialization, section]);
 
   const handleCourseChange = (e) => {
     setCourse(e.target.value);
     setSemester("");
+    setSpecialization("");
+    setSection("");
     setAttendanceSummary([]);
     setSubjects([]);
     setSubject("");
     subjectsLoaded.current = false;
   };
 
+  // ✅ FIXED: Updated semester change handler to reset section as well
   const handleSemesterChange = (e) => {
-    setSemester(e.target.value);
+    const newSemester = e.target.value;
+    setSemester(newSemester);
+    setAttendanceSummary([]);
+    setSubject("");
+    
+    // Reset specialization if the new semester doesn't require it
+    if (!requiresSpecialization(course, newSemester)) {
+      setSpecialization("");
+    }
+    
+    subjectsLoaded.current = false;
+  };
+
+  // ✅ FIXED: Updated specialization change handler with section support
+  const handleSpecializationChange = (e) => {
+    console.log("🎯 Specialization changed to:", e.target.value);
+    setSpecialization(e.target.value);
     setAttendanceSummary([]);
     setSubject("");
     subjectsLoaded.current = false;
+    
+    // Force fetch subjects when specialization changes
+    if (course && semester && e.target.value) {
+      console.log("🔄 Force fetching subjects due to specialization change");
+      fetchSubjects(course, semester, e.target.value, section, true); // Force refresh
+    }
+  };
+
+  // New section change handler
+  const handleSectionChange = (e) => {
+    console.log("📚 Section changed to:", e.target.value);
+    setSection(e.target.value);
+    setAttendanceSummary([]);
+    setSubject("");
+    subjectsLoaded.current = false;
+    
+    // Force fetch subjects when section changes
+    if (course && semester) {
+      console.log("🔄 Force fetching subjects due to section change");
+      const specializationToUse = requiresSpecialization(course, semester) ? specialization : "";
+      if (!requiresSpecialization(course, semester) || specializationToUse) {
+        fetchSubjects(course, semester, specializationToUse, e.target.value, true); // Force refresh
+      }
+    }
   };
 
   const handleSubjectChange = (e) => {
@@ -281,12 +444,19 @@ const Record = () => {
     setIsModalOpen(true);
   };
 
+  // ✅ FIXED: Updated fetchAttendanceSummary function with section support
   const fetchAttendanceSummary = async () => {
     if (!course || !semester || !academicYear || !subject) {
       showAlert(
         "Please select Course, Semester, Subject, and Academic Year",
         true
       );
+      return;
+    }
+
+    // Check if specialization is required but not selected
+    if (requiresSpecialization(course, semester) && !specialization) {
+      showAlert("Please select a Specialization", true);
       return;
     }
 
@@ -297,27 +467,55 @@ const Record = () => {
         (s) => s.Sub_Code === subject || s._id === subject
       );
 
+      const requestData = {
+        course: selectedSubject?.Course_ID || "", // Correct Course_ID like "C1"
+        semester,
+        subject: subject.trim(),
+        academicYear,
+      };
+
+      // Add specialization to request if required
+      if (requiresSpecialization(course, semester) && specialization) {
+        requestData.specialization = specialization;
+      }
+
+      // Add section to request if selected (convert empty string to null)
+      if (section) {
+        requestData.section = section;
+      } else {
+        requestData.section = null;
+      }
+
+      console.log("🚀 Request Data being sent:", requestData);
+
       const response = await axios.post(
         `${process.env.REACT_APP_BACKEND_URL}/attendance/getAttendanceByCourseAndSubject`,
-        {
-          course: selectedSubject?.Course_ID || "", // Correct Course_ID like "C1"
-          semester,
-          subject: subject.trim(),
-          academicYear,
-        }
+        requestData
       );
 
-      if (response.data.length === 0) {
+      console.log("🚀 Full API Response:", response.data);
+
+      // ✅ FIX: Extract students array from response
+      const studentsData = response.data.students || response.data || [];
+      
+      console.log("🚀 Students Data:", studentsData);
+      console.log("🚀 Students Count:", studentsData.length);
+
+      if (studentsData.length === 0) {
         showAlert(
           "No attendance records found for the selected criteria",
           true
         );
+        setAttendanceSummary([]);
       } else {
-        setAttendanceSummary(response.data);
+        setAttendanceSummary(studentsData);
+        console.log("✅ Attendance Summary Set Successfully:", studentsData);
       }
     } catch (error) {
-      console.error("Error fetching attendance summary:", error);
+      console.error("❌ Error fetching attendance summary:", error);
+      console.error("❌ Error response:", error.response?.data);
       showAlert("Failed to fetch attendance summary. Please try again.", true);
+      setAttendanceSummary([]);
     } finally {
       setLoading(false);
     }
@@ -325,18 +523,30 @@ const Record = () => {
 
   // Calculate attendance percentage
   const calculatePercentage = (present, total) => {
-    if (!total) return 0;
+    if (!total || total === 0) return 0;
     return ((present / total) * 100).toFixed(2);
   };
 
-  // Navigate to student detail page
+  // Navigate to student detail page with section support
   const viewStudentDetail = (studentId) => {
+    const navigationState = {
+      subject: subject.trim(),
+      semester: semester,
+      academicYear: academicYear,
+    };
+
+    // Add specialization to navigation state if required
+    if (requiresSpecialization(course, semester) && specialization) {
+      navigationState.specialization = specialization;
+    }
+
+    // Add section to navigation state if selected
+    if (section) {
+      navigationState.section = section;
+    }
+
     navigate(`/student/${studentId}`, {
-      state: {
-        subject: subject.trim(),
-        semester: semester,
-        academicYear: academicYear,
-      },
+      state: navigationState,
     });
   };
 
@@ -349,7 +559,7 @@ const Record = () => {
     setIsNotificationModalOpen(true);
   };
 
-  // Export to Excel function
+  // ✅ FIXED: Updated Export to Excel function with section support
   const exportToExcel = () => {
     if (attendanceSummary.length === 0) {
       showAlert("No data to export", true);
@@ -369,17 +579,29 @@ const Record = () => {
         const status =
           percentage >= 75 ? "Good" : percentage >= 65 ? "Warning" : "Critical";
 
-        return {
+        const rowData = {
           "Roll Number": record.rollNumber,
           "Student Name": record.studentName,
           Subject:
-            subjects.find((s) => (s.Sub_Code || s._id) === record.subject)
-              ?.Sub_Name || record.subject,
+            subjects.find((s) => (s.Sub_Code || s._id) === record.subjectCode)
+              ?.Sub_Name || record.subjectCode || subject,
           "Classes Attended": record.classesAttended,
           "Total Classes": record.totalClasses,
           "Attendance %": `${percentage}%`,
           Status: status,
         };
+
+        // Add specialization column if applicable
+        if (requiresSpecialization(course, semester) && specialization) {
+          rowData.Specialization = specialization;
+        }
+
+        // Add section column if selected
+        if (section) {
+          rowData.Section = section;
+        }
+
+        return rowData;
       });
 
       const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -397,7 +619,14 @@ const Record = () => {
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance Summary");
 
-      const fileName = `${course}_${semester}Sem_${subjectName}_${academicYear}_Attendance.xlsx`;
+      let fileName = `${course}_${semester}Sem_${subjectName}_${academicYear}`;
+      if (requiresSpecialization(course, semester) && specialization) {
+        fileName += `_${specialization}`;
+      }
+      if (section) {
+        fileName += `_Section${section}`;
+      }
+      fileName += "_Attendance.xlsx";
 
       XLSX.writeFile(workbook, fileName);
 
@@ -424,6 +653,12 @@ const Record = () => {
     localStorage.removeItem("subjectsCache");
     console.log("Subjects cache cleared");
   };
+
+  // Debug: Monitor attendance summary changes
+  useEffect(() => {
+    console.log("🚀 Attendance Summary Updated:", attendanceSummary);
+    console.log("🚀 Should render table:", attendanceSummary.length > 0);
+  }, [attendanceSummary]);
 
   return (
     <div className={`record_container ${theme}`}>
@@ -483,6 +718,46 @@ const Record = () => {
             </select>
           </div>
 
+          {/* ✅ FIXED: Specialization dropdown - only shown when required */}
+          {requiresSpecialization(course, semester) && (
+            <div className="record_filter-group">
+              <label htmlFor="specialization">Specialization:</label>
+              <select
+                id="specialization"
+                value={specialization}
+                onChange={handleSpecializationChange}
+                className="record_filter-select"
+                disabled={!course || !semester}
+              >
+                <option value="">Select Specialization</option>
+                {specializationOptions.map((spec) => (
+                  <option key={spec.value} value={spec.value}>
+                    {spec.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* New Section dropdown - always visible and optional */}
+          <div className="record_filter-group">
+            <label htmlFor="section">Section:</label>
+            <select
+              id="section"
+              value={section}
+              onChange={handleSectionChange}
+              className="record_filter-select"
+              disabled={!course || !semester}
+            >
+              <option value="">Select Section (Optional)</option>
+              {sectionOptions.map((sec) => (
+                <option key={sec.value} value={sec.value}>
+                  {sec.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="record_filter-group">
             <label htmlFor="subject">Subject:</label>
             <select
@@ -490,7 +765,8 @@ const Record = () => {
               value={subject}
               onChange={handleSubjectChange}
               className="record_filter-select"
-              disabled={!semester || !course || loadingSubjects}
+              disabled={!semester || !course || loadingSubjects || 
+                       (requiresSpecialization(course, semester) && !specialization)}
             >
               <option value="">
                 {loadingSubjects ? "Loading subjects..." : "Select Subject"}
@@ -527,7 +803,12 @@ const Record = () => {
             className="record_btn-fetch"
             onClick={fetchAttendanceSummary}
             disabled={
-              loading || !course || !semester || !academicYear || !subject
+              loading || 
+              !course || 
+              !semester || 
+              !academicYear || 
+              !subject || 
+              (requiresSpecialization(course, semester) && !specialization)
             }
           >
             Get Students
@@ -554,6 +835,7 @@ const Record = () => {
                   <th>Roll Number</th>
                   <th>Student Name</th>
                   <th>Subject</th>
+                  {requiresSpecialization(course, semester) && specialization && <th>Specialization</th>}
                   <th>Classes Attended</th>
                   <th>Total Classes</th>
                   <th>Attendance %</th>
@@ -562,6 +844,7 @@ const Record = () => {
                 </tr>
               </thead>
               <tbody>
+                {/* ✅ FIXED: Updated table rendering to use correct field names */}
                 {attendanceSummary.map((record, index) => {
                   const percentage = calculatePercentage(
                     record.classesAttended,
@@ -582,10 +865,14 @@ const Record = () => {
                       <td>{record.rollNumber}</td>
                       <td>{record.studentName}</td>
                       <td>
+                        {/* Updated to use subjectCode from API response */}
                         {subjects.find(
-                          (s) => (s.Sub_Code || s._id) === record.subject
-                        )?.Sub_Name || record.subject}
+                          (s) => (s.Sub_Code || s._id) === record.subjectCode
+                        )?.Sub_Name || record.subjectCode || record.subject}
                       </td>
+                      {requiresSpecialization(course, semester) && specialization && (
+                        <td>{specialization}</td>
+                      )}
                       <td>{record.classesAttended}</td>
                       <td>{record.totalClasses}</td>
                       <td>{percentage}%</td>
