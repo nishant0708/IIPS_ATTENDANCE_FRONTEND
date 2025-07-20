@@ -7,6 +7,7 @@ import AlertModal from "../AlertModal/AlertModal";
 import { useNavigate, useLocation } from "react-router-dom";
 import * as XLSX from "xlsx";
 import NotificationModal from "../NotificationModel/NotificationModel";
+import DateFilterModal from "../DateFilterModel/DateFilterModel";
 
 const Record = () => {
   const navigate = useNavigate();
@@ -30,6 +31,9 @@ const Record = () => {
   const shouldFetchData = useRef(false);
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
   const [availableSemesters, setAvailableSemesters] = useState([]);
+  const [isDateFilterModalOpen, setIsDateFilterModalOpen] = useState(false);
+const [startDate, setStartDate] = useState("");
+const [endDate, setEndDate] = useState("");
   
   // New state for caching subjects
   const [subjectsCache, setSubjectsCache] = useState({});
@@ -126,10 +130,7 @@ const Record = () => {
     }
 
     const cacheKey = getSubjectsCacheKey(courseName, semesterNum, specializationValue, sectionValue);
-    console.log("🔍 Fetching subjects with cache key:", cacheKey);
-    console.log("🔍 Current cache keys:", Object.keys(subjectsCache));
-    console.log("🔍 Force refresh:", forceRefresh);
-    
+ 
     // Check if subjects are already cached and not forcing refresh
     if (subjectsCache[cacheKey] && !forceRefresh) {
       console.log("✅ Using cached subjects for", cacheKey);
@@ -291,45 +292,51 @@ const Record = () => {
     }
   }, [course, semester, specialization, section]); // Added section to dependencies
 
-  // ✅ FIXED: Load saved filters on component mount only once with section support
-  useEffect(() => {
-    const savedFilters = JSON.parse(localStorage.getItem("attendanceFilters")) || {};
-    console.log("💾 Loading saved filters:", savedFilters);
+useEffect(() => {
+  const savedFilters = JSON.parse(localStorage.getItem("attendanceFilters")) || {};
+  console.log("💾 Loading saved filters:", savedFilters);
 
-    if (savedFilters.course && !filtersLoaded.current) {
-      console.log("🔄 Restoring saved filters");
-      setCourse(savedFilters.course);
-      
-      if (savedFilters.semester) {
-        setSemester(savedFilters.semester);
-      }
-      
-      // ✅ FIX: Properly handle specialization restoration with semester check
-      if (savedFilters.specialization && savedFilters.semester && 
-          requiresSpecialization(savedFilters.course, savedFilters.semester)) {
-        console.log("🎯 Restoring specialization:", savedFilters.specialization);
-        setSpecialization(savedFilters.specialization);
-      }
-
-      // Restore section if saved
-      if (savedFilters.section) {
-        console.log("📚 Restoring section:", savedFilters.section);
-        setSection(savedFilters.section);
-      }
-      
-      if (savedFilters.academicYear) {
-        setAcademicYear(savedFilters.academicYear);
-      }
-
-      filtersLoaded.current = true;
-
-      // Set flag to fetch data if coming from detail page
-      if (location.state?.returnFromDetail) {
-        console.log("🔙 Returning from detail page, will fetch data");
-        shouldFetchData.current = true;
-      }
+  if (savedFilters.course && !filtersLoaded.current) {
+    console.log("🔄 Restoring saved filters");
+    setCourse(savedFilters.course);
+    
+    if (savedFilters.semester) {
+      setSemester(savedFilters.semester);
     }
-  }, [location.state]);
+    
+    // Properly handle specialization restoration with semester check
+    if (savedFilters.specialization && savedFilters.semester && 
+        requiresSpecialization(savedFilters.course, savedFilters.semester)) {
+      console.log("🎯 Restoring specialization:", savedFilters.specialization);
+      setSpecialization(savedFilters.specialization);
+    }
+
+    // Restore section if saved
+    if (savedFilters.section) {
+      console.log("📚 Restoring section:", savedFilters.section);
+      setSection(savedFilters.section);
+    }
+    
+    if (savedFilters.academicYear) {
+      setAcademicYear(savedFilters.academicYear);
+    }
+
+    // Restore date filters if saved
+    if (savedFilters.startDate && savedFilters.endDate) {
+      setStartDate(savedFilters.startDate);
+      setEndDate(savedFilters.endDate);
+    }
+
+    filtersLoaded.current = true;
+
+    // Set flag to fetch data if coming from detail page
+    if (location.state?.returnFromDetail) {
+      console.log("🔙 Returning from detail page, will fetch data");
+      shouldFetchData.current = true;
+    }
+  }
+}, [location.state]);
+
 
   // ✅ FIXED: Updated auto-fetch effect with section support
   useEffect(() => {
@@ -356,20 +363,22 @@ const Record = () => {
   }, [course, semester, subject, academicYear, specialization, section, subjects]); // Added section to dependencies
 
   // Save filters to localStorage whenever they change (including section)
-  useEffect(() => {
-    if (course || semester || subject || academicYear || specialization || section) {
-      const filtersToSave = {
-        course,
-        semester,
-        subject,
-        academicYear,
-        specialization,
-        section,
-      };
-      console.log("💾 Saving filters to localStorage:", filtersToSave);
-      localStorage.setItem("attendanceFilters", JSON.stringify(filtersToSave));
-    }
-  }, [course, semester, subject, academicYear, specialization, section]);
+ useEffect(() => {
+  if (course || semester || subject || academicYear || specialization || section || startDate || endDate) {
+    const filtersToSave = {
+      course,
+      semester,
+      subject,
+      academicYear,
+      specialization,
+      section,
+      startDate,
+      endDate,
+    };
+    console.log("💾 Saving filters to localStorage:", filtersToSave);
+    localStorage.setItem("attendanceFilters", JSON.stringify(filtersToSave));
+  }
+}, [course, semester, subject, academicYear, specialization, section, startDate, endDate]);
 
   const handleCourseChange = (e) => {
     setCourse(e.target.value);
@@ -444,82 +453,113 @@ const Record = () => {
     setIsModalOpen(true);
   };
 
-  // ✅ FIXED: Updated fetchAttendanceSummary function with section support
-  const fetchAttendanceSummary = async () => {
-    if (!course || !semester || !academicYear || !subject) {
-      showAlert(
-        "Please select Course, Semester, Subject, and Academic Year",
-        true
-      );
-      return;
-    }
-
-    // Check if specialization is required but not selected
-    if (requiresSpecialization(course, semester) && !specialization) {
-      showAlert("Please select a Specialization", true);
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const selectedSubject = subjects.find(
-        (s) => s.Sub_Code === subject || s._id === subject
-      );
-
-      const requestData = {
-        course: selectedSubject?.Course_ID || "", // Correct Course_ID like "C1"
-        semester,
-        subject: subject.trim(),
-        academicYear,
-      };
-
-      // Add specialization to request if required
-      if (requiresSpecialization(course, semester) && specialization) {
-        requestData.specialization = specialization;
-      }
-
-      // Add section to request if selected (convert empty string to null)
-      if (section) {
-        requestData.section = section;
-      } else {
-        requestData.section = null;
-      }
-
-      console.log("🚀 Request Data being sent:", requestData);
-
-      const response = await axios.post(
-        `${process.env.REACT_APP_BACKEND_URL}/attendance/getAttendanceByCourseAndSubject`,
-        requestData
-      );
-
-      console.log("🚀 Full API Response:", response.data);
-
-      // ✅ FIX: Extract students array from response
-      const studentsData = response.data.students || response.data || [];
-      
-      console.log("🚀 Students Data:", studentsData);
-      console.log("🚀 Students Count:", studentsData.length);
-
-      if (studentsData.length === 0) {
-        showAlert(
-          "No attendance records found for the selected criteria",
-          true
-        );
-        setAttendanceSummary([]);
-      } else {
-        setAttendanceSummary(studentsData);
-        console.log("✅ Attendance Summary Set Successfully:", studentsData);
-      }
-    } catch (error) {
-      console.error("❌ Error fetching attendance summary:", error);
-      console.error("❌ Error response:", error.response?.data);
-      showAlert("Failed to fetch attendance summary. Please try again.", true);
-      setAttendanceSummary([]);
-    } finally {
-      setLoading(false);
-    }
+const handleDateFilterApply = async (newStartDate, newEndDate) => {
+  // Update state first
+  setStartDate(newStartDate);
+  setEndDate(newEndDate);
+  
+  // Save date filter to localStorage
+  const savedFilters = JSON.parse(localStorage.getItem("attendanceFilters")) || {};
+  const updatedFilters = {
+    ...savedFilters,
+    startDate: newStartDate,
+    endDate: newEndDate,
   };
+  localStorage.setItem("attendanceFilters", JSON.stringify(updatedFilters));
+  
+  // If we have attendance data, refetch with NEW date filter values (not state)
+  if (course && semester && subject && academicYear) {
+    await fetchAttendanceSummaryWithDates(newStartDate, newEndDate);
+  }
+};
+
+// Add this new function to handle fetching with specific date parameters:
+const fetchAttendanceSummaryWithDates = async (startDateParam, endDateParam) => {
+  if (!course || !semester || !academicYear || !subject) {
+    showAlert(
+      "Please select Course, Semester, Subject, and Academic Year",
+      true
+    );
+    return;
+  }
+
+  // Check if specialization is required but not selected
+  if (requiresSpecialization(course, semester) && !specialization) {
+    showAlert("Please select a Specialization", true);
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const selectedSubject = subjects.find(
+      (s) => s.Sub_Code === subject || s._id === subject
+    );
+
+    const requestData = {
+      course: selectedSubject?.Course_ID || "", // Correct Course_ID like "C1"
+      semester,
+      subject: subject.trim(),
+      academicYear,
+    };
+
+    // Add specialization to request if required
+    if (requiresSpecialization(course, semester) && specialization) {
+      requestData.specialization = specialization;
+    }
+
+    // Add section to request if selected
+    if (section) {
+      requestData.section = section;
+    } else {
+      requestData.section = null;
+    }
+
+    // Add date filters - use parameters instead of state
+    if (startDateParam && endDateParam) {
+      requestData.startDate = startDateParam;
+      requestData.endDate = endDateParam;
+    }
+
+    console.log("🚀 Request Data being sent:", requestData);
+
+    const response = await axios.post(
+      `${process.env.REACT_APP_BACKEND_URL}/attendance/getAttendanceByCourseAndSubject`,
+      requestData
+    );
+
+    console.log("🚀 Full API Response:", response.data);
+
+    // Extract students array from response
+    const studentsData = response.data.students || response.data || [];
+    
+    console.log("🚀 Students Data:", studentsData);
+    console.log("🚀 Students Count:", studentsData.length);
+
+    if (studentsData.length === 0) {
+      const message = startDateParam && endDateParam 
+        ? `No attendance records found for the selected criteria between ${startDateParam} and ${endDateParam}`
+        : "No attendance records found for the selected criteria";
+      showAlert(message, true);
+      setAttendanceSummary([]);
+    } else {
+      setAttendanceSummary(studentsData);
+      console.log("✅ Attendance Summary Set Successfully:", studentsData);
+    }
+  } catch (error) {
+    console.error("❌ Error fetching attendance summary:", error);
+    console.error("❌ Error response:", error.response?.data);
+    showAlert("Failed to fetch attendance summary. Please try again.", true);
+    setAttendanceSummary([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Also update your existing fetchAttendanceSummary function to use the current state:
+const fetchAttendanceSummary = async () => {
+  await fetchAttendanceSummaryWithDates(startDate, endDate);
+};
 
   // Calculate attendance percentage
   const calculatePercentage = (present, total) => {
@@ -528,27 +568,34 @@ const Record = () => {
   };
 
   // Navigate to student detail page with section support
-  const viewStudentDetail = (studentId) => {
-    const navigationState = {
-      subject: subject.trim(),
-      semester: semester,
-      academicYear: academicYear,
-    };
-
-    // Add specialization to navigation state if required
-    if (requiresSpecialization(course, semester) && specialization) {
-      navigationState.specialization = specialization;
-    }
-
-    // Add section to navigation state if selected
-    if (section) {
-      navigationState.section = section;
-    }
-
-    navigate(`/student/${studentId}`, {
-      state: navigationState,
-    });
+const viewStudentDetail = (studentId) => {
+  const navigationState = {
+    subject: subject.trim(),
+    semester: semester,
+    academicYear: academicYear,
   };
+
+  // Add specialization to navigation state if required
+  if (requiresSpecialization(course, semester) && specialization) {
+    navigationState.specialization = specialization;
+  }
+
+  // Add section to navigation state if selected
+  if (section) {
+    navigationState.section = section;
+  }
+
+  // Add date filters to navigation state if they exist
+  if (startDate && endDate) {
+    navigationState.startDate = startDate;
+    navigationState.endDate = endDate;
+  }
+
+  navigate(`/student/${studentId}`, {
+    state: navigationState,
+  });
+};
+
 
   // Open notification modal
   const openNotificationModal = () => {
@@ -560,82 +607,86 @@ const Record = () => {
   };
 
   // ✅ FIXED: Updated Export to Excel function with section support
-  const exportToExcel = () => {
-    if (attendanceSummary.length === 0) {
-      showAlert("No data to export", true);
-      return;
-    }
+const exportToExcel = () => {
+  if (attendanceSummary.length === 0) {
+    showAlert("No data to export", true);
+    return;
+  }
 
-    try {
-      const subjectName =
-        subjects.find((s) => (s.Sub_Code || s._id) === subject)?.Sub_Name ||
-        subject;
+  try {
+    const subjectName =
+      subjects.find((s) => (s.Sub_Code || s._id) === subject)?.Sub_Name ||
+      subject;
 
-      const worksheetData = attendanceSummary.map((record) => {
-        const percentage = calculatePercentage(
-          record.classesAttended,
-          record.totalClasses
-        );
-        const status =
-          percentage >= 75 ? "Good" : percentage >= 65 ? "Warning" : "Critical";
+    const worksheetData = attendanceSummary.map((record) => {
+      const percentage = calculatePercentage(
+        record.classesAttended,
+        record.totalClasses
+      );
+      const status =
+        percentage >= 75 ? "Good" : percentage >= 65 ? "Warning" : "Critical";
 
-        const rowData = {
-          "Roll Number": record.rollNumber,
-          "Student Name": record.studentName,
-          Subject:
-            subjects.find((s) => (s.Sub_Code || s._id) === record.subjectCode)
-              ?.Sub_Name || record.subjectCode || subject,
-          "Classes Attended": record.classesAttended,
-          "Total Classes": record.totalClasses,
-          "Attendance %": `${percentage}%`,
-          Status: status,
-        };
+      const rowData = {
+        "Roll Number": record.rollNumber,
+        "Student Name": record.studentName,
+        Subject:
+          subjects.find((s) => (s.Sub_Code || s._id) === record.subjectCode)
+            ?.Sub_Name || record.subjectCode || subject,
+        "Classes Attended": record.classesAttended,
+        "Total Classes": record.totalClasses,
+        "Attendance %": `${percentage}%`,
+        Status: status,
+      };
 
-        // Add specialization column if applicable
-        if (requiresSpecialization(course, semester) && specialization) {
-          rowData.Specialization = specialization;
-        }
-
-        // Add section column if selected
-        if (section) {
-          rowData.Section = section;
-        }
-
-        return rowData;
-      });
-
-      const worksheet = XLSX.utils.json_to_sheet(worksheetData);
-
-      // Make the first row bold
-      const range = XLSX.utils.decode_range(worksheet["!ref"]);
-      for (let C = range.s.c; C <= range.e.c; ++C) {
-        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C });
-        if (!worksheet[cellAddress]) continue;
-        worksheet[cellAddress].s = {
-          font: { bold: true },
-        };
-      }
-
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance Summary");
-
-      let fileName = `${course}_${semester}Sem_${subjectName}_${academicYear}`;
+      // Add specialization column if applicable
       if (requiresSpecialization(course, semester) && specialization) {
-        fileName += `_${specialization}`;
+        rowData.Specialization = specialization;
       }
+
+      // Add section column if selected
       if (section) {
-        fileName += `_Section${section}`;
+        rowData.Section = section;
       }
-      fileName += "_Attendance.xlsx";
 
-      XLSX.writeFile(workbook, fileName);
+      return rowData;
+    });
 
-      showAlert("Export successful!");
-    } catch (error) {
-      console.error("Error exporting to Excel:", error);
-      showAlert("Failed to export data. Please try again.", true);
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+
+    // Make the first row bold
+    const range = XLSX.utils.decode_range(worksheet["!ref"]);
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C });
+      if (!worksheet[cellAddress]) continue;
+      worksheet[cellAddress].s = {
+        font: { bold: true },
+      };
     }
-  };
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance Summary");
+
+    let fileName = `${course}_${semester}Sem_${subjectName}_${academicYear}`;
+    if (requiresSpecialization(course, semester) && specialization) {
+      fileName += `_${specialization}`;
+    }
+    if (section) {
+      fileName += `_Section${section}`;
+    }
+    // Add date range to filename if filters are applied
+    if (startDate && endDate) {
+      fileName += `_${startDate}_to_${endDate}`;
+    }
+    fileName += "_Attendance.xlsx";
+
+    XLSX.writeFile(workbook, fileName);
+
+    showAlert("Export successful!");
+  } catch (error) {
+    console.error("Error exporting to Excel:", error);
+    showAlert("Failed to export data. Please try again.", true);
+  }
+};
 
   const toggleTheme = () => {
     if (theme === "light" || !theme) {
@@ -678,6 +729,14 @@ const Record = () => {
         onClose={() => setIsNotificationModalOpen(false)}
         attendanceSummary={attendanceSummary}
       />
+         <DateFilterModal
+                isOpen={isDateFilterModalOpen}
+                onClose={() => setIsDateFilterModalOpen(false)}
+                onApplyFilter={handleDateFilterApply}
+                currentStartDate={startDate}
+                currentEndDate={endDate}
+              />
+
 
       <div className="record_summary-section">
         <h2>Attendance Record</h2>
@@ -828,6 +887,14 @@ const Record = () => {
               >
                 Send Mail For Notification
               </button>
+                <button
+        className={`record_btn-filter ${startDate && endDate ? 'active' : ''}`}
+        onClick={() => setIsDateFilterModalOpen(true)}
+      
+      >
+        {startDate && endDate ? 'Date Filter Applied' : 'Filter by Date'}
+      </button>
+           
             </div>
             <table className="record_summary-table">
               <thead>

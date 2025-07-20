@@ -1,0 +1,200 @@
+/* Overlay */
+.date-filter-modal-overlay {
+  background-color: rgba(0, 0, 0, 0.75);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9111;
+  backdrop-filter: blur(12px);
+}
+
+/* Modal Container */
+.date-filter-modal {
+  padding: 20px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 450px;
+  text-align: left;
+  background-color: #e6e6e6;
+  animation: modalAppear 0.3s ease-out;
+}
+
+
+.date-filter-modal.dark {
+  background-color: #333;
+  color: #fff;
+}
+
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Header */
+.date-filter-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #888;
+}
+
+.date-filter-modal-header h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+/* Close Button */
+.date-filter-close-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: inherit;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.date-filter-close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Body */
+.date-filter-modal-body {
+  padding-top: 12px;
+}
+
+/* Input Group */
+.date-filter-input-group {
+  margin-bottom: 20px;
+}
+
+.date-filter-input-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.date-filter-input {
+  width: 92%;
+  padding: 10px 14px;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 2px solid #aaa;
+  background-color: #f9f9f9;
+  transition: all 0.2s ease;
+}
+
+.date-filter-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* Error */
+.date-filter-error {
+  color: #dc2626;
+  font-size: 0.875rem;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+/* Footer */
+.date-filter-modal-footer {
+  display: flex;
+  justify-content: space-evenly;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+/* Buttons */
+.date-filter-btn {
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  min-width: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+/* Apply Button (Green) */
+.date-filter-btn-apply {
+  background-color: green;
+  color: #fff;
+}
+
+.date-filter-btn-apply:hover {
+  background-color: rgba(0, 128, 0, 0.384);
+}
+
+/* Clear Button (Red) */
+.date-filter-btn-clear {
+  background-color: red;
+  color: #fff;
+}
+
+.date-filter-btn-clear:hover {
+  background-color: rgba(255, 0, 0, 0.384);
+}
+
+/* Dark Theme Support */
+.dark .date-filter-modal {
+  background-color: #333;
+  color: #fff;
+}
+
+.dark .date-filter-input {
+  background-color: #444;
+  border-color: #777;
+  color: #fff;
+}
+
+.dark .date-filter-input:focus {
+  border-color: #60a5fa;
+  background-color: #444;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+.dark .date-filter-error {
+  background-color: #2d1b1b;
+  border-color: #5d2f2f;
+  color: #fca5a5;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .date-filter-modal {
+    width: 95%;
+    margin: 20px;
+  }
+
+  .date-filter-modal-footer {
+    flex-direction: column;
+  }
+
+  .date-filter-btn {
+    width: 100%;
+  }
+}

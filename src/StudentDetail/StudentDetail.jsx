@@ -47,12 +47,26 @@ window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
-  const fetchAttendanceDetails = async () => {
+const fetchAttendanceDetails = async () => {
   setLoading(true);
   try {
     const params = new URLSearchParams();
     if (location.state?.specialization) {
       params.append('specialization', location.state.specialization);
+    }
+    
+    // Add date filters if they exist in location state
+    if (location.state?.startDate) {
+      params.append('startDate', location.state.startDate);
+    }
+    
+    if (location.state?.endDate) {
+      params.append('endDate', location.state.endDate);
+    }
+    
+    // Add section filter if it exists
+    if (location.state?.section) {
+      params.append('section', location.state.section);
     }
     
     const queryString = params.toString();
@@ -76,7 +90,6 @@ window.scrollTo({ top: 0, behavior: 'smooth' });
     setLoading(false);
   }
 };
-
   const showAlert = (msg, error = false) => {
     setModalMessage(msg);
     setIsError(error);
@@ -134,9 +147,14 @@ window.scrollTo({ top: 0, behavior: 'smooth' });
         <button onClick={handleBackToRecords} className={`student-detail-back-btn ${theme}`}>Back to Records</button>
         <br />
         <br />
-        <div className="student-detail-header">
-          <h2>Student Attendance Details</h2>
-        </div>
+       <div className="student-detail-header">
+  <h2>
+    Student Attendance Details
+    {location.state?.startDate && location.state?.endDate && (
+      <> between {formatDate(location.state.startDate)} and {formatDate(location.state.endDate)}</>
+    )}
+  </h2>
+</div>
         
         {studentInfo && (
           <div className={`student-info-card ${theme}`}>
