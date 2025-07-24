@@ -45,7 +45,7 @@ function Login() {
     axios
       .post(`${process.env.REACT_APP_BACKEND_URL}/teacher/login`, { email, password })
       .then((response) => {
-        const { sessionId, message, teacherId, name, email, mobileNumber, photo } = response.data;
+        const { sessionId, message, teacherId, name, email, photo } = response.data;
 
         // Set modal state for success
         setModalMessage(message || "Login successful");
@@ -58,7 +58,6 @@ function Login() {
         localStorage.setItem("name", name);
         localStorage.setItem("email", email);
         localStorage.setItem("photo", photo);
-        localStorage.setItem("mobileNumber", mobileNumber);
 
         // Navigate after a short delay to ensure modal is shown
         setTimeout(() => {
