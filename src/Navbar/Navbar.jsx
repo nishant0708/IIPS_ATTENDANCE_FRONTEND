@@ -12,25 +12,10 @@ const Navbar = ({ theme, toggleTheme }) => {
   const location = useLocation();
   const [isAdmin, setIsAdmin] = useState(false);
   const [photo, setPhoto] = useState("");
-  useEffect(() => {
-    axios
-      .post(`${process.env.REACT_APP_BACKEND_URL}/teacher/getteacherDetails`, {
-        teacherId: localStorage.getItem("teacherId"),
-      })
-      .then((res) => {
-        setPhoto(
-          localStorage.getItem("photo") ||
-            res.data.teacher.photo ||
-            defaultPhoto
-        );
-        setIsAdmin(
-          localStorage.getItem("email") === "nishantkaushal0708@gmail.com"
-        );
-      })
-      .catch((err) => {
-        console.error(err);
-      });
-  }, []);
+useEffect(() => {
+  setPhoto(localStorage.getItem("photo") || defaultPhoto);
+  setIsAdmin(localStorage.getItem("email") === "nishantkaushal0708@gmail.com");
+}, []);
 
   const responsive = () => {
     const sidebar = document.getElementsByClassName("navbar-sidebar")[0];
