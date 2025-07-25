@@ -67,7 +67,7 @@ const Dashboard = () => {
       now.getTime() + offset * 60 * 1000 + 5.5 * 60 * 60 * 1000
     );
     // Subtract 5 days
-    istTime.setDate(istTime.getDate() - 5);
+    istTime.setDate(istTime.getDate() - 20);
     return istTime.toISOString().substr(0, 10);
   };
 
