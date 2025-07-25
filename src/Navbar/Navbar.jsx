@@ -10,7 +10,7 @@ const Navbar = ({ theme, toggleTheme }) => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-
+  const [isAdmin, setIsAdmin] = useState(false);
   const [photo, setPhoto] = useState("");
   useEffect(() => {
     axios
@@ -19,7 +19,12 @@ const Navbar = ({ theme, toggleTheme }) => {
       })
       .then((res) => {
         setPhoto(
-          localStorage.getItem("photo") || res.data.teacher.photo || defaultPhoto
+          localStorage.getItem("photo") ||
+            res.data.teacher.photo ||
+            defaultPhoto
+        );
+        setIsAdmin(
+          localStorage.getItem("email") === "nishantkaushal0708@gmail.com"
         );
       })
       .catch((err) => {
@@ -75,13 +80,28 @@ const Navbar = ({ theme, toggleTheme }) => {
           >
             Attendance Record
           </p>
+          {isAdmin && (
+            <p
+              className={`navbar-links ${
+                location.pathname === `/admin` ? "active" : ""
+              }`}
+              onClick={() => navigate(`/admin`)}
+            >
+              Upload Data
+            </p>
+          )}
         </div>
         <div className="navbar-right-margin navbar-displayed">
-        <p className="toggle-head">Toggle Theme:
-          <label className="switch">
-            <input type="checkbox" checked={theme === 'dark'} onChange={toggleTheme} />
-            <span className="slider round"></span>
-          </label>
+          <p className="toggle-head">
+            Toggle Theme:
+            <label className="switch">
+              <input
+                type="checkbox"
+                checked={theme === "dark"}
+                onChange={toggleTheme}
+              />
+              <span className="slider round"></span>
+            </label>
           </p>
           <p className="navbar-logout" onClick={handleLogout}>
             <span className="logbut">
@@ -125,14 +145,32 @@ const Navbar = ({ theme, toggleTheme }) => {
             >
               Attendance Record
             </p>
+            {isAdmin && (
+              <p
+                className={`navbar-links ${theme} ${
+                  location.pathname === `/admin` ? "active" : ""
+                }`}
+                onClick={() => {
+                  navigate(`/admin`);
+                  responsive(); // close sidebar after click
+                }}
+              >
+                Upload Data
+              </p>
+            )}
           </li>
-          
+
           <li>
-            <p className={`toggle-head ${theme}`} >Toggle Theme:
-            <label className="switch">
-              <input type="checkbox" checked={theme === 'dark'} onChange={toggleTheme} />
-              <span className="slider round"></span>
-            </label>
+            <p className={`toggle-head ${theme}`}>
+              Toggle Theme:
+              <label className="switch">
+                <input
+                  type="checkbox"
+                  checked={theme === "dark"}
+                  onChange={toggleTheme}
+                />
+                <span className="slider round"></span>
+              </label>
             </p>
             <p
               className={`navbar-logout navbar-logout-menu ${theme}`}

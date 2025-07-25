@@ -12,6 +12,8 @@ import Error404 from './error/error404';
 import Dashboard from './Dashboard/Dashboard';
 import Record from './Attendance_Record/Record';
 import StudentDetail from './StudentDetail/StudentDetail';
+import AdminPage from './Admin/AdminPage';
+
 
 
 
@@ -19,11 +21,11 @@ const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
   const location = useLocation(); // Get the current location
-
+const [Admin, setAdmin] = useState(false);
   useEffect(() => {
     const publicRoutes = ["/sign_up", "/verify_passcode","/forgot_password","/reset_password"];
     const sessionId = localStorage.getItem("sessionId");
-
+    setAdmin(localStorage.getItem("email") === "nishantkaushal0708@gmail.com");
     // If the current route is public, skip the authentication check
     if (publicRoutes.includes(location.pathname)) {
       return;
@@ -66,6 +68,9 @@ const App = () => {
         <Route path="/Dashboard" element={<Dashboard />} />
         <Route path="/attendance_record" element={<Record />} />
         <Route path="/student/:studentId" element={<StudentDetail />} />
+        {Admin && (
+        <Route path="/admin" element={<AdminPage />} />
+        )}
         </>
       )}
 

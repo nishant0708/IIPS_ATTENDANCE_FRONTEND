@@ -44,6 +44,9 @@
 
 .navbar-left-margin {
   margin-left: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   cursor: pointer;
 }
 
@@ -149,7 +152,7 @@
   transform: rotate(90deg);
 }
 
-@media (max-width: 720px) {
+@media (max-width: 900px) {
   body {
     overflow-x: hidden;
   }
@@ -157,6 +160,10 @@
   .toggle-head{
     display: block;
    height: 40px;
+   font-size: larger;
+   display: flex;
+   align-items: center;
+   justify-content: left;
     border-bottom: 1px solid rgba(255, 255, 255, 0.253);
   }
   .toggle-head.light{
