@@ -24,13 +24,25 @@ const Dashboard = () => {
   const [loadingSubjects, setLoadingSubjects] = useState(false);
 
   // Specialization options for MBA(MS) courses
-  const specializationOptions = [
+  const mbaSpecializationOptions = [
     { value: "Core", label: "Core" },
     { value: "FA", label: "FA" },
     { value: "BA", label: "BA" },
     { value: "FB", label: "FB" },
     { value: "HA", label: "HA" },
     { value: "MA", label: "MA" }
+  ];
+
+  // Specialization options for BCom courses
+  const bcomSpecializationOptions = [
+    { value: "Core", label: "Core" },
+    { value: "Elective-MktMgmt", label: "Marketing Management" },
+    { value: "Elective-HumanValues", label: "Human Values" },
+    { value: "Elective-IFS", label: "Indian Financial System" },
+    { value: "Elective-BankingInsurance", label: "Banking and Insurance" },
+    { value: "Elective-CorporateRV", label: "Corporate Restructuring and Valuation" },
+    { value: "Elective-BusinessAnalytics", label: "Business Analytics" },
+    { value: "Project", label: "Project" }
   ];
 
   // Section options
@@ -40,12 +52,22 @@ const Dashboard = () => {
   ];
 
   // Check if current course requires specialization
- const requiresSpecialization = (courseKey, semester) => {
-  if (courseKey === "MBA(MS)-2Yrs") return true;
-  if (courseKey === "MBA(MS)-5yrs" && parseInt(semester) >= 7) return true;
-  return false;
-};
+  const requiresSpecialization = (courseKey, semester) => {
+    if (courseKey === "MBA(MS)-2Yrs") return true;
+    if (courseKey === "MBA(MS)-5yrs" && parseInt(semester) >= 7) return true;
+    if (courseKey === "BCOM") return true; // BCom also requires specialization
+    return false;
+  };
 
+  // Get specialization options based on course
+  const getSpecializationOptions = (courseKey) => {
+    if (courseKey === "BCOM") {
+      return bcomSpecializationOptions;
+    } else if (courseKey === "MBA(MS)-2Yrs" || courseKey === "MBA(MS)-5yrs") {
+      return mbaSpecializationOptions;
+    }
+    return [];
+  };
 
   // Get current date in IST format
   const getCurrentDateIST = () => {
@@ -80,7 +102,7 @@ const Dashboard = () => {
     "MTECH(CS)": { years: 5, displayName: "MTech(CS)5Years" },
     "MBA(MS)-5yrs": { years: 5, displayName: "MBA(MS)5Years" },
     "MBA(MS)-2Yrs": { years: 2, displayName: "MBA(MS)2Years" },
-    "MBA(ESHIP)": { years: 2, displayName: "MBA(ESHIP)" },
+    "MBA(ESHIP)": { years: 2, displayName: "MBA(E-Ship)" },
     "MBA(APR)": { years: 2, displayName: "MBA(APR)" },
     "MBA(TM)": { years: 5, displayName: "MBA(T)5Years" },
     BCOM: { years: 4, displayName: "BCom(Hons)3-4Years" },
@@ -157,32 +179,32 @@ const Dashboard = () => {
     }
   }, [course]);
 
-useEffect(() => {
-  if (course && semester) {
-    // Check if specialization is required for this course
-    if (requiresSpecialization(course, semester)) {
-      // Only fetch subjects if specialization is also selected
-      if (specialization) {
-        fetchSubjects(course, semester);
+  useEffect(() => {
+    if (course && semester) {
+      // Check if specialization is required for this course
+      if (requiresSpecialization(course, semester)) {
+        // Only fetch subjects if specialization is also selected
+        if (specialization) {
+          fetchSubjects(course, semester);
+        } else {
+          // Clear subjects and students if specialization is required but not selected
+          setSubjects([]);
+          setSubject("");
+          setStudents([]);
+        }
       } else {
-        // Clear subjects and students if specialization is required but not selected
-        setSubjects([]);
-        setSubject("");
-        setStudents([]);
+        // Fetch subjects directly if no specialization is required
+        fetchSubjects(course, semester);
       }
+      
+      // Reset students when course/semester changes (moved outside the specialization check)
+      setStudents([]);
     } else {
-      // Fetch subjects directly if no specialization is required
-      fetchSubjects(course, semester);
+      setSubjects([]);
+      setSubject("");
+      setStudents([]);
     }
-    
-    // Reset students when course/semester changes (moved outside the specialization check)
-    setStudents([]);
-  } else {
-    setSubjects([]);
-    setSubject("");
-    setStudents([]);
-  }
-}, [course, semester, specialization]); // Added specialization as dependen
+  }, [course, semester, specialization]); // Added specialization as dependency
 
   const handleCourseChange = (e) => {
     setCourse(e.target.value);
@@ -420,7 +442,7 @@ useEffect(() => {
             </select>
           </div>
 
-          {/* Specialization dropdown - only shown for MBA(MS) courses */}
+          {/* Specialization dropdown - shown for MBA(MS) and BCom courses */}
           {requiresSpecialization(course, semester) && (
             <div className="form-group">
               <label htmlFor="specialization">Specialization:</label>
@@ -432,7 +454,7 @@ useEffect(() => {
                 disabled={!course}
               >
                 <option value="">Select Specialization</option>
-                {specializationOptions.map((spec) => (
+                {getSpecializationOptions(course).map((spec) => (
                   <option key={spec.value} value={spec.value}>
                     {spec.label}
                   </option>

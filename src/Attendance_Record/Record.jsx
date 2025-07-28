@@ -71,7 +71,7 @@ const [endDate, setEndDate] = useState("");
     "MTECH(CS)": { years: 5, displayName: "MTech(CS)5Years" },
     "MBA(MS)-5yrs": { years: 5, displayName: "MBA(MS)5Years" },
     "MBA(MS)-2Yrs": { years: 2, displayName: "MBA(MS)2Years" },
-    "MBA(ESHIP)": { years: 2, displayName: "MBA(ESHIP)" },
+    "MBA(ESHIP)": { years: 2, displayName: "MBA(E-Ship)" },
     "MBA(APR)": { years: 2, displayName: "MBA(APR)" },
     "MBA(TM)": { years: 5, displayName: "MBA(T)5Years" },
     BCOM: { years: 4, displayName: "BCom(Hons)3-4Years" },
