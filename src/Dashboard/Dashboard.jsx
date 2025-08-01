@@ -88,8 +88,8 @@ const Dashboard = () => {
     const istTime = new Date(
       now.getTime() + offset * 60 * 1000 + 5.5 * 60 * 60 * 1000
     );
-    // Subtract 5 days
-    istTime.setDate(istTime.getDate() - 20);
+    // Subtract 35 days
+    istTime.setDate(istTime.getDate() - 35);
     return istTime.toISOString().substr(0, 10);
   };
 
