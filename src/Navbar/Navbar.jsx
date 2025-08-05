@@ -38,7 +38,7 @@ useEffect(() => {
   return (
     <>
       <div className={`navbar ${theme}`}>
-        <div className="navbar-contents navbar-left-margin">
+        <div className="navbar-contents navbar-left-margin" onClick={() => navigate(`/edit_profile`)}>
           <img
             className="pfp"
             src={photo}

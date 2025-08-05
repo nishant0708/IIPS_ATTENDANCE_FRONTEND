@@ -13,6 +13,7 @@ import Dashboard from './Dashboard/Dashboard';
 import Record from './Attendance_Record/Record';
 import StudentDetail from './StudentDetail/StudentDetail';
 import AdminPage from './Admin/AdminPage';
+import Profile from './profile/profile';
 
 
 
@@ -68,6 +69,7 @@ const [Admin, setAdmin] = useState(false);
         <Route path="/Dashboard" element={<Dashboard />} />
         <Route path="/attendance_record" element={<Record />} />
         <Route path="/student/:studentId" element={<StudentDetail />} />
+        <Route path="/edit_profile" element={<Profile />} />
         {Admin && (
         <Route path="/admin" element={<AdminPage />} />
         )}

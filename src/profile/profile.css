@@ -1,0 +1,457 @@
+:root {
+  --background-color-light: #ffffff;
+  --background-main-color-light: #ebeaea;
+  --text-color-light: #000000;
+  --background-color-dark: #1a1a1a;
+  --background-color-inner-dark: #282828;
+  --text-color-dark: #ffffff;
+  --input-background-color-light: #f0f0f0;
+  --input-background-color-dark: #4d4d4d;
+  --button-background-color-light: #4CAF50;
+  --button-background-color-dark: #4CAF50;
+  --button-hover-color-light: #45a049;
+  --button-hover-color-dark: #45a049;
+  --border-color-light: #ccc;
+  --border-color-dark: #444;
+  --error-color: #d9534f;
+  --error-hover-color: #c9302c;
+}
+
+/* Profile container main wrapper */
+.profile-container-main {
+  display: flex;
+    flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.profile-container-main.light {
+  background-color: var(--background-main-color-light);
+  color: var(--text-color-light);
+}
+
+.profile-container-main.dark {
+  background-color: var(--background-color-dark);
+  color: var(--text-color-dark);
+}
+
+/* Profile card */
+.profile-card {
+  border-radius: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 500px;
+  margin: 120px auto;
+  text-align: center;
+  padding: 20px;
+  position: relative;
+  border: 1px solid var(--border-color-light);
+}
+
+.profile-card.light {
+  background-color: var(--background-color-light);
+  color: var(--text-color-light);
+}
+
+.profile-card.dark {
+  background-color: var(--background-color-inner-dark);
+  color: var(--text-color-dark);
+  border: 1px solid var(--border-color-dark);
+  box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
+}
+
+.profile-header {
+  position: relative;
+  display: inline-block;
+}
+
+.profile-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 5px solid var(--background-color-light);
+  margin-top: -90px;
+  box-shadow: 10px 15px 60px rgba(0, 0, 0, 0.1);
+}
+
+.profile-card.dark .profile-image {
+  border: 5px solid var(--text-color-dark);
+  box-shadow: 10px 15px 60px rgba(255, 255, 255, 0.1);
+}
+
+.profile-plus-icon {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background-color: var(--text-color-light);
+  color: var(--background-color-light);
+  border-radius: 50%;
+  padding: 5px;
+  cursor: pointer;
+}
+
+.profile-card.dark .profile-plus-icon {
+  background-color: var(--text-color-dark);
+  color: var(--background-color-dark);
+}
+
+.profile-details {
+  margin-top: -40px;
+}
+
+.profile-name {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 5px;
+  margin-top: 50px;
+  color: inherit;
+}
+
+.profile-email {
+  font-size: 16px;
+  color: inherit;
+  margin-bottom: 5px;
+}
+
+.profile-mob {
+  font-size: 18px;
+  color: gray;
+}
+
+.profile-card.dark .profile-mob {
+  color: #ccc;
+}
+
+/* Edit button */
+.profile-edit-button {
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  margin-top: 20px;
+  transition: background-color 0.3s;
+}
+
+.profile-edit-button.light {
+  background-color: var(--button-background-color-light);
+  color: white;
+}
+
+.profile-edit-button.dark {
+  background-color: var(--button-background-color-dark);
+  color: white;
+}
+
+.profile-edit-button:hover {
+  background-color: var(--button-hover-color-light);
+}
+
+.profile-edit-button.dark:hover {
+  background-color: var(--button-hover-color-dark);
+}
+
+/* Modal styles */
+.profile-overlay {
+  background-color: rgba(0, 0, 0, 0.7);
+  position: fixed;
+  top: 0;
+  z-index: 5555;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-modal {
+  padding: 20px;
+  border-radius: 10px;
+  width: 400px;
+  max-width: 90%;
+  margin: auto;
+  border: 1px solid var(--border-color-light);
+}
+
+.profile-modal.light {
+  background-color: var(--background-color-light);
+  color: var(--text-color-light);
+}
+
+.profile-modal.dark {
+  background-color: var(--background-color-inner-dark);
+  color: var(--text-color-dark);
+  border: 1px solid var(--border-color-dark);
+}
+
+.profile-modal h2 {
+  font-size: 22px;
+  margin-bottom: 20px;
+  color: inherit;
+}
+
+.profile-modal-form label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 16px;
+  color: inherit;
+}
+
+.profile-modal-form input {
+  width: calc(100% - 10px);
+  padding: 8px;
+  font-size: 14px;
+  margin-top: 5px;
+  border: 1px solid var(--border-color-light);
+  border-radius: 5px;
+  color: inherit;
+}
+
+.profile-modal-form input.light {
+  background-color: var(--input-background-color-light);
+}
+
+.profile-modal-form input.dark {
+  background-color: var(--input-background-color-dark);
+  border: 1px solid var(--border-color-dark);
+}
+
+.profile-modal-form input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Password field */
+.profile-password-field {
+  position: relative;
+  width: 100%;
+}
+
+.profile-eye-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-30%);
+  cursor: pointer;
+  color: inherit;
+}
+
+.profile-input-normal {
+  border: 1px solid var(--border-color-light) !important;
+}
+
+.profile-input-faded {
+  border: 1px solid var(--error-color) !important;
+}
+
+.profile-modal.dark .profile-input-normal {
+  border: 1px solid var(--border-color-dark) !important;
+}
+
+/* Edit password button */
+.profile-edit-password-button {
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  margin-bottom: 15px;
+  transition: background-color 0.3s;
+}
+
+.profile-edit-password-button.light {
+  background-color: var(--button-background-color-light);
+  color: white;
+}
+
+.profile-edit-password-button.dark {
+  background-color: var(--button-background-color-dark);
+  color: white;
+}
+
+.profile-edit-password-button:hover {
+  background-color: var(--button-hover-color-light);
+}
+
+.profile-edit-password-button.dark:hover {
+  background-color: var(--button-hover-color-dark);
+}
+
+/* Modal buttons */
+.profile-modal-buttons {
+  margin-top: 20px;
+  text-align: right;
+}
+
+.profile-modal-buttons button {
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  margin-left: 10px;
+  transition: background-color 0.3s;
+}
+
+.profile-modal-buttons button.light {
+  background-color: var(--button-background-color-light);
+  color: white;
+}
+
+.profile-modal-buttons button.dark {
+  background-color: var(--button-background-color-dark);
+  color: white;
+}
+
+.profile-modal-buttons button:hover {
+  background-color: var(--button-hover-color-light);
+}
+
+.profile-modal-buttons button.dark:hover {
+  background-color: var(--button-hover-color-dark);
+}
+
+/* Alert Modal Styles */
+.profile-alert-modal {
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.profile-alert-modal.light {
+  background-color: var(--background-color-light);
+  color: var(--text-color-light);
+}
+
+.profile-alert-modal.dark {
+  background-color: var(--background-color-inner-dark);
+  color: var(--text-color-dark);
+}
+
+.profile-alert-message {
+  font-size: 18px;
+  margin-bottom: 20px;
+  color: inherit;
+}
+
+.profile-alert-buttons button {
+  background-color: #f5b921;
+  color: black;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s;
+}
+
+.profile-alert-buttons button:hover {
+  background-color: #e09e1a;
+}
+
+.profile-alert-buttons .profile-close-button {
+  background-color: var(--error-color);
+  color: white;
+  margin-left: 10px;
+}
+
+.profile-alert-buttons .profile-close-button:hover {
+  background-color: var(--error-hover-color);
+}
+
+/* Crop modal styles */
+.profile-crop-modal {
+  width: 400px;
+  height: 500px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.profile-crop-modal.light {
+  background-color: var(--background-color-light);
+  color: var(--text-color-light);
+}
+
+.profile-crop-modal.dark {
+  background-color: var(--background-color-inner-dark);
+  color: var(--text-color-dark);
+}
+
+.modal-buttons {
+  z-index: 5;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.modal-buttons button {
+  width: 45%;
+  padding: 10px;
+  border: none;
+  background-color: var(--button-background-color-light);
+  color: white;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.modal-buttons button:hover {
+  background-color: var(--button-hover-color-light);
+}
+
+.crop_h2 {
+  font-size: 18px;
+  margin-bottom: 20px;
+  z-index: 5;
+  color: inherit;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .profile-card {
+    width: 90%;
+    margin: 150px auto;
+  }
+  
+  .profile-modal {
+    width: 80%;
+  }
+  
+  .profile-crop-modal {
+    width: 80%;
+    height: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-image {
+    width: 100px;
+    height: 100px;
+    margin-top: -70px;
+  }
+  
+  .profile-name {
+    font-size: 20px;
+    margin-top: 40px;
+  }
+  
+  .profile-email,
+  .profile-mob {
+    font-size: 14px;
+  }
+}
