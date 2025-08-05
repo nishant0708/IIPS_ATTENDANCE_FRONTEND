@@ -28,13 +28,23 @@ const Profile = () => {
   const [editPassword, setEditPassword] = useState(false);
   const [passwordsMatch, setPasswordMatch] = useState(false);
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
     const fetchTeacherDetails = async () => {
       try {
-        const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/teacher/getteacherDetails`, {
-          teacherId: localStorage.getItem("teacherId"),
-        });
+       const response = await axios.post(
+  `${process.env.REACT_APP_BACKEND_URL}/teacher/getteacherDetails`,
+  {
+    teacherId: localStorage.getItem("teacherId"),
+  },
+  {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+);
+
 
         const teacherData = response?.data?.teacher;
         if (teacherData) {
@@ -97,6 +107,10 @@ const Profile = () => {
   axios.post(`${process.env.REACT_APP_BACKEND_URL}/teacher/edit`, {
     teacherId: localStorage.getItem("teacherId"),
     ...newProfileData,
+  },{
+    headers: {
+        Authorization: `Bearer ${token}`,
+    }
   })
     .then((response) => {
       openAlertModal("Profile updated successfully!");

@@ -22,6 +22,7 @@ const Dashboard = () => {
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
   const [availableSemesters, setAvailableSemesters] = useState([]);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
+  const token = localStorage.getItem("token");
 
   // Specialization options for MBA(MS) courses
   const mbaSpecializationOptions = [
@@ -134,7 +135,11 @@ const Dashboard = () => {
           course: courseConfig[course]?.displayName,
           semester: semesterNum,
           specialization: requiresSpecialization(course,semester) ? specialization : null,
-        }
+        },{
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
       );
 
       setSubjects(response.data || []);
@@ -284,7 +289,12 @@ const Dashboard = () => {
 
       const response = await axios.post(
         `${process.env.REACT_APP_BACKEND_URL}/attendance/getByCourseAndSemester`,
-        requestData
+        requestData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       setStudents(response.data);
@@ -364,7 +374,12 @@ const Dashboard = () => {
 
       await axios.post(
         `${process.env.REACT_APP_BACKEND_URL}/attendance/markattendance`,
-        attendanceData
+        attendanceData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       showAlert("Attendance submitted successfully!", false);
 
