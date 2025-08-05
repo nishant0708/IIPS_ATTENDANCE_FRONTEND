@@ -19,6 +19,7 @@ const StudentDetail = () => {
   const [studentInfo, setStudentInfo] = useState(null);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [summary, setSummary] = useState({ present: 0, absent: 0, total: 0, percentage: 0 });
+  const token = localStorage.getItem("token");
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light'); // Initialize theme from local storage
 
   useEffect(() => {
@@ -37,7 +38,15 @@ window.scrollTo({ top: 0, behavior: 'smooth' });
   const fetchStudentInfo = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/attendance/students/${studentId}`);
+     const response = await axios.get(
+  `${process.env.REACT_APP_BACKEND_URL}/attendance/students/${studentId}`,
+  {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+);
+
       setStudentInfo(response.data);
     } catch (error) {
       console.error('Error fetching student information:', error);
@@ -71,9 +80,13 @@ const fetchAttendanceDetails = async () => {
     
     const queryString = params.toString();
     const url = `${process.env.REACT_APP_BACKEND_URL}/attendance/detail/${studentId}/${subject}/${semester}/${academicYear}${queryString ? `?${queryString}` : ''}`;
-    
-    const response = await axios.get(url);
-    
+
+    const response = await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
     setAttendanceRecords(response.data);
     
     // Calculate summary

@@ -10,7 +10,7 @@ const NotificationModal = ({ isOpen, onClose, attendanceSummary }) => {
   const [alertMessage, setAlertMessage] = useState('');
   const [isError, setIsError] = useState(false);
   const theme = localStorage.getItem('theme') || 'light'; // Initialize theme from local storage
-
+const token = localStorage.getItem("token");
   if (!isOpen) return null;
 
   const handleThresholdChange = (e) => {
@@ -23,9 +23,15 @@ const NotificationModal = ({ isOpen, onClose, attendanceSummary }) => {
 
     try {
       const response = await axios.post(
-        `${process.env.REACT_APP_BACKEND_URL}/attendance/sendLowAttendanceNotifications`,
-        { attendanceSummary, threshold }
-      );
+  `${process.env.REACT_APP_BACKEND_URL}/attendance/sendLowAttendanceNotifications`,
+  { attendanceSummary, threshold },
+  {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+);
+
 
       setSending(false);
       setAlertMessage(`Successfully sent notifications to ${response.data.sentCount} students.`);

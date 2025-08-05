@@ -34,6 +34,7 @@ const Record = () => {
   const [isDateFilterModalOpen, setIsDateFilterModalOpen] = useState(false);
 const [startDate, setStartDate] = useState("");
 const [endDate, setEndDate] = useState("");
+ const token = localStorage.getItem("token");
   
   // New state for caching subjects
   const [subjectsCache, setSubjectsCache] = useState({});
@@ -174,7 +175,12 @@ const [endDate, setEndDate] = useState("");
 
       const response = await axios.post(
         `${process.env.REACT_APP_BACKEND_URL}/attendance/getsubjects`,
-        requestData
+        requestData,
+        {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
       );
 
       const subjectsData = response.data || [];
@@ -525,7 +531,11 @@ const fetchAttendanceSummaryWithDates = async (startDateParam, endDateParam) => 
 
     const response = await axios.post(
       `${process.env.REACT_APP_BACKEND_URL}/attendance/getAttendanceByCourseAndSubject`,
-      requestData
+      requestData,{
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
     );
 
     console.log("🚀 Full API Response:", response.data);

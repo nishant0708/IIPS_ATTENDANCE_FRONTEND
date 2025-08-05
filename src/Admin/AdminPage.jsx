@@ -27,6 +27,7 @@ const AdminPage = () => {
   const [dragActive, setDragActive] = useState(false);
   const [uploadResult, setUploadResult] = useState(null);
   const resultRef = useRef(null);
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
     document.title = "Admin: Data Upload";
@@ -242,12 +243,16 @@ const AdminPage = () => {
         selectedCategory?.endpoint || `/teacher/upload-${category}s`;
 
       const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URL}${endpoint}`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+  `${process.env.REACT_APP_BACKEND_URL}${endpoint}`,
+  {
+    method: "POST",
+    body: formData,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+);
+
 
       const result = await response.json();
 

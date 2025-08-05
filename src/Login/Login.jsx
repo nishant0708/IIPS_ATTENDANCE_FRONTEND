@@ -45,7 +45,7 @@ function Login() {
     axios
       .post(`${process.env.REACT_APP_BACKEND_URL}/teacher/login`, { email, password })
       .then((response) => {
-        const { sessionId, message, teacherId, name, email, photo } = response.data;
+        const { sessionId, message, teacherId, name, email, photo, token } = response.data;
 
         // Set modal state for success
         setModalMessage(message || "Login successful");
@@ -53,6 +53,7 @@ function Login() {
         setModalIsOpen(true);
 
         // Store session ID and teacher's details in local storage
+        localStorage.setItem("token", token);
         localStorage.setItem("sessionId", sessionId);
         localStorage.setItem("teacherId", teacherId);
         localStorage.setItem("name", name);
