@@ -34,6 +34,13 @@ const Dashboard = () => {
     { value: "MA", label: "MA" }
   ];
 
+  // Special specialization options for MBA(MS) 2yrs semester 1
+  const mbaSem1SpecializationOptions = [
+    { value: "Core", label: "Core" },
+    { value: "Accounting-Elective", label: "Accounting-Elective" },
+    { value: "QT-Elective", label: "QT-Elective" }
+  ];
+
   // Specialization options for BCom courses
   const bcomSpecializationOptions = [
     { value: "Core", label: "Core" },
@@ -46,10 +53,17 @@ const Dashboard = () => {
     { value: "Project", label: "Project" }
   ];
 
-  // Section options
+  // Section options - default
   const sectionOptions = [
     { value: "A", label: "A" },
     { value: "B", label: "B" }
+  ];
+
+  // Special section options for MBA(MS) 2yrs semester 1
+  const mbaSem1SectionOptions = [
+    { value: "A", label: "A" },
+    { value: "B", label: "B" },
+    { value: "C", label: "C" }
   ];
 
   // Check if current course requires specialization
@@ -60,14 +74,30 @@ const Dashboard = () => {
     return false;
   };
 
-  // Get specialization options based on course
-  const getSpecializationOptions = (courseKey) => {
+  // Get specialization options based on course and semester
+  const getSpecializationOptions = (courseKey, semesterNum) => {
     if (courseKey === "BCOM") {
       return bcomSpecializationOptions;
-    } else if (courseKey === "MBA(MS)-2Yrs" || courseKey === "MBA(MS)-5yrs") {
+    } else if (courseKey === "MBA(MS)-2Yrs") {
+      // Special case for MBA(MS) 2yrs semester 1
+      if (parseInt(semesterNum) === 1) {
+        return mbaSem1SpecializationOptions;
+      }
+      return mbaSpecializationOptions;
+    } else if (courseKey === "MBA(MS)-5yrs") {
       return mbaSpecializationOptions;
     }
     return [];
+  };
+
+  // Get section options based on course and semester
+  const getSectionOptions = (courseKey, semesterNum) => {
+    // Special case for MBA(MS) 2yrs semester 1
+    if (courseKey === "MBA(MS)-2Yrs" && parseInt(semesterNum) === 1) {
+      return mbaSem1SectionOptions;
+    }
+    // Default section options for all other cases
+    return sectionOptions;
   };
 
   // Get current date in IST format
@@ -95,6 +125,7 @@ const Dashboard = () => {
   };
 
   const [attendanceDate, setAttendanceDate] = useState(getCurrentDateIST());
+  const [availableSectionOptions, setAvailableSectionOptions] = useState(sectionOptions);
 
   // Course configuration with years
   const courseConfig = {
@@ -185,6 +216,21 @@ const Dashboard = () => {
   }, [course]);
 
   useEffect(() => {
+    // Update available section options when course or semester changes
+    if (course && semester) {
+      const sectionOpts = getSectionOptions(course, semester);
+      setAvailableSectionOptions(sectionOpts);
+      
+      // Reset section if current selection is not available in new options
+      if (section && !sectionOpts.find(opt => opt.value === section)) {
+        setSection("");
+      }
+    } else {
+      setAvailableSectionOptions(sectionOptions);
+    }
+  }, [course, semester]);
+
+  useEffect(() => {
     if (course && semester) {
       // Check if specialization is required for this course
       if (requiresSpecialization(course, semester)) {
@@ -225,6 +271,8 @@ const Dashboard = () => {
     setSemester(e.target.value);
     setStudents([]);
     setSubject("");
+    setSpecialization(""); // Reset specialization when semester changes
+    setSection(""); // Reset section when semester changes
   };
 
   const handleSubjectChange = (e) => {
@@ -466,10 +514,10 @@ const Dashboard = () => {
                 value={specialization}
                 onChange={handleSpecializationChange}
                 className="form-select"
-                disabled={!course}
+                disabled={!course || !semester}
               >
                 <option value="">Select Specialization</option>
-                {getSpecializationOptions(course).map((spec) => (
+                {getSpecializationOptions(course, semester).map((spec) => (
                   <option key={spec.value} value={spec.value}>
                     {spec.label}
                   </option>
@@ -478,9 +526,9 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* Section dropdown - optional field */}
+          
           <div className="form-group">
-            <label htmlFor="section">Section (Optional):</label>
+            <label htmlFor="section">Section (IF Applicable):</label>
             <select
               id="section"
               value={section}
@@ -488,7 +536,7 @@ const Dashboard = () => {
               className="form-select"
             >
               <option value="">Select Section</option>
-              {sectionOptions.map((sec) => (
+              {availableSectionOptions.map((sec) => (
                 <option key={sec.value} value={sec.value}>
                   {sec.label}
                 </option>

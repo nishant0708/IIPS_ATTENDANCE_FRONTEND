@@ -16,7 +16,7 @@ const Record = () => {
   const [semester, setSemester] = useState("");
   const [subject, setSubject] = useState("");
   const [specialization, setSpecialization] = useState("");
-  const [section, setSection] = useState(""); // New section state
+  const [section, setSection] = useState(""); // Section state
   const [subjects, setSubjects] = useState([]);
   const [academicYear, setAcademicYear] = useState("");
   const [attendanceSummary, setAttendanceSummary] = useState([]);
@@ -32,30 +32,52 @@ const Record = () => {
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
   const [availableSemesters, setAvailableSemesters] = useState([]);
   const [isDateFilterModalOpen, setIsDateFilterModalOpen] = useState(false);
-const [startDate, setStartDate] = useState("");
-const [endDate, setEndDate] = useState("");
- const token = localStorage.getItem("token");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const token = localStorage.getItem("token");
   
   // New state for caching subjects
   const [subjectsCache, setSubjectsCache] = useState({});
 
-  // Specialization options for MBA(MS) courses
-  const specializationOptions = [
-    { value: "Core", label: "Core" },
-    { value: "FA", label: "FA" },
-    { value: "BA", label: "BA" },
-    { value: "FB", label: "FB" },
-    { value: "HA", label: "HA" },
-    { value: "MA", label: "MA" }
-  ];
+  // Updated specialization options for different courses and semesters
+  const getSpecializationOptions = (courseKey, semesterNum) => {
+    if (courseKey === "MBA(MS)-2Yrs" && semesterNum === "1") {
+      return [
+        { value: "Core", label: "Core" },
+        { value: "Accounting-Elective", label: "Accounting-Elective" },
+        { value: "QT-Elective", label: "QT-Elective" }
+      ];
+    } else {
+      // Default specializations for other MBA courses
+      return [
+        { value: "Core", label: "Core" },
+        { value: "FA", label: "FA" },
+        { value: "BA", label: "BA" },
+        { value: "FB", label: "FB" },
+        { value: "HA", label: "HA" },
+        { value: "MA", label: "MA" }
+      ];
+    }
+  };
 
-  // Section options
-  const sectionOptions = [
-    { value: "A", label: "A" },
-    { value: "B", label: "B" }
-  ];
+  // Updated section options based on course and semester
+  const getSectionOptions = (courseKey, semesterNum) => {
+    if (courseKey === "MBA(MS)-2Yrs" && semesterNum === "1") {
+      return [
+        { value: "A", label: "A" },
+        { value: "B", label: "B" },
+        { value: "C", label: "C" }
+      ];
+    } else {
+      // Default sections for other courses
+      return [
+        { value: "A", label: "A" },
+        { value: "B", label: "B" }
+      ];
+    }
+  };
 
-  // ✅ FIXED: Updated function to properly check specialization requirements
+  // ✅ UPDATED: Function to check specialization requirements
   const requiresSpecialization = (courseKey, semesterNum) => {
     if (!courseKey || !semesterNum) return false;
     const semesterNumber = parseInt(semesterNum);
@@ -118,7 +140,7 @@ const [endDate, setEndDate] = useState("");
     }
   };
 
-  // ✅ FIXED: Updated fetchSubjects function with section support
+  // ✅ UPDATED: fetchSubjects function with section support
   const fetchSubjects = async (courseName, semesterNum, specializationValue = "", sectionValue = "", forceRefresh = false) => {
     if (!courseName || !semesterNum) return;
 
@@ -245,7 +267,7 @@ const [endDate, setEndDate] = useState("");
     loadSubjectsCache();
   }, []);
 
-  // ✅ FIXED: Updated available semesters effect with proper specialization reset
+  // ✅ UPDATED: Available semesters effect with proper specialization reset
   useEffect(() => {
     if (course) {
       const semesters = getAvailableSemesters(course);
@@ -258,10 +280,12 @@ const [endDate, setEndDate] = useState("");
         setSubject("");
       }
 
-      // ✅ FIXED: Reset specialization if course doesn't require it for current semester
+      // ✅ UPDATED: Reset specialization and section if course/semester combination changes
       if (!requiresSpecialization(course, semester)) {
         setSpecialization("");
       }
+      // Reset section when course changes as section options might be different
+      setSection("");
     } else {
       setAvailableSemesters([]);
       setSubjects([]);
@@ -271,7 +295,7 @@ const [endDate, setEndDate] = useState("");
     }
   }, [course, semester]); // Added semester to dependencies
 
-  // ✅ FIXED: Updated subjects fetching effect with section support
+  // ✅ UPDATED: Subjects fetching effect with section support
   useEffect(() => {
     console.log("🔄 Subjects effect triggered:", { course, semester, specialization, section });
     
@@ -344,7 +368,7 @@ useEffect(() => {
 }, [location.state]);
 
 
-  // ✅ FIXED: Updated auto-fetch effect with section support
+  // ✅ UPDATED: Auto-fetch effect with section support
   useEffect(() => {
     const allFiltersSelected = course && semester && subject && academicYear &&
       (!requiresSpecialization(course, semester) || specialization);
@@ -397,7 +421,7 @@ useEffect(() => {
     subjectsLoaded.current = false;
   };
 
-  // ✅ FIXED: Updated semester change handler to reset section as well
+  // ✅ UPDATED: Semester change handler to reset section as well
   const handleSemesterChange = (e) => {
     const newSemester = e.target.value;
     setSemester(newSemester);
@@ -407,12 +431,19 @@ useEffect(() => {
     // Reset specialization if the new semester doesn't require it
     if (!requiresSpecialization(course, newSemester)) {
       setSpecialization("");
+    } else {
+      // Reset specialization when semester changes for courses that require it
+      // This ensures the correct specialization options are shown
+      setSpecialization("");
     }
+    
+    // Reset section when semester changes as section options might be different
+    setSection("");
     
     subjectsLoaded.current = false;
   };
 
-  // ✅ FIXED: Updated specialization change handler with section support
+  // ✅ UPDATED: Specialization change handler with section support
   const handleSpecializationChange = (e) => {
     console.log("🎯 Specialization changed to:", e.target.value);
     setSpecialization(e.target.value);
@@ -427,7 +458,7 @@ useEffect(() => {
     }
   };
 
-  // New section change handler
+  // UPDATED: Section change handler
   const handleSectionChange = (e) => {
     console.log("📚 Section changed to:", e.target.value);
     setSection(e.target.value);
@@ -616,7 +647,7 @@ const viewStudentDetail = (studentId) => {
     setIsNotificationModalOpen(true);
   };
 
-  // ✅ FIXED: Updated Export to Excel function with section support
+  // ✅ UPDATED: Export to Excel function with section support
 const exportToExcel = () => {
   if (attendanceSummary.length === 0) {
     showAlert("No data to export", true);
@@ -799,7 +830,7 @@ const exportToExcel = () => {
                 disabled={!course || !semester}
               >
                 <option value="">Select Specialization</option>
-                {specializationOptions.map((spec) => (
+                {getSpecializationOptions(course, semester).map((spec) => (
                   <option key={spec.value} value={spec.value}>
                     {spec.label}
                   </option>
@@ -819,7 +850,7 @@ const exportToExcel = () => {
               disabled={!course || !semester}
             >
               <option value="">Select Section (Optional)</option>
-              {sectionOptions.map((sec) => (
+              {getSectionOptions(course, semester).map((sec) => (
                 <option key={sec.value} value={sec.value}>
                   {sec.label}
                 </option>
