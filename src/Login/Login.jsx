@@ -19,7 +19,7 @@ function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = "Teacher:login";
+    document.title = "IIPS||Attendence";
 
     // Check if session ID exists in local storage and is still valid
     const sessionId = localStorage.getItem("sessionId");

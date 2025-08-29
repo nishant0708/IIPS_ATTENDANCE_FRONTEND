@@ -8,14 +8,75 @@ import axios from "axios";
 
 const Navbar = ({ theme, toggleTheme }) => {
   const [open, setOpen] = useState(false);
+  const [adminMenu, setAdminMenu] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const [isAdmin, setIsAdmin] = useState(false);
   const [photo, setPhoto] = useState("");
-useEffect(() => {
-  setPhoto(localStorage.getItem("photo") || defaultPhoto);
-  setIsAdmin(localStorage.getItem("email") === "nishantkaushal0708@gmail.com");
-}, []);
+
+  useEffect(() => {
+    setPhoto(localStorage.getItem("photo") || defaultPhoto);
+    setIsAdmin(localStorage.getItem("email") === "nishantkaushal0708@gmail.com");
+  }, []);
+
+  useEffect(() => {
+    // Add/remove class to body for page content shifting
+    if (adminMenu && isAdmin) {
+      document.body.classList.add('admin-dropdown-open');
+      
+      // Find and shift multiple possible content containers
+      const selectors = [
+        '.page-content', 
+        'main', 
+        '.container', 
+        '.app-container',
+        '#root > div',
+        'body > div:first-child'
+      ];
+      
+      let contentFound = false;
+      
+      selectors.forEach(selector => {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach(element => {
+          // Skip navbar and sidebar elements
+          if (element && 
+              !element.classList.contains('navbar') && 
+              !element.classList.contains('navbar-sidebar') &&
+              !element.closest('.navbar') && 
+              !element.closest('.navbar-sidebar')) {
+            element.classList.add('shifted');
+            contentFound = true;
+          }
+        });
+      });
+      
+      // If no specific containers found, try the first div after body
+      if (!contentFound) {
+        const firstDiv = document.querySelector('body > div:first-child');
+        if (firstDiv && !firstDiv.classList.contains('navbar')) {
+          firstDiv.classList.add('shifted');
+        }
+      }
+    } else {
+      document.body.classList.remove('admin-dropdown-open');
+      
+      // Remove shifted class from all elements
+      const allShifted = document.querySelectorAll('.shifted');
+      allShifted.forEach(element => {
+        element.classList.remove('shifted');
+      });
+    }
+
+    // Cleanup function
+    return () => {
+      document.body.classList.remove('admin-dropdown-open');
+      const allShifted = document.querySelectorAll('.shifted');
+      allShifted.forEach(element => {
+        element.classList.remove('shifted');
+      });
+    };
+  }, [adminMenu, isAdmin]);
 
   const responsive = () => {
     const sidebar = document.getElementsByClassName("navbar-sidebar")[0];
@@ -35,10 +96,68 @@ useEffect(() => {
     navigate("/");
   };
 
+  const toggleAdminMenu = () => {
+    setAdminMenu(!adminMenu);
+  };
+
+  const closeAdminMenu = () => {
+    setAdminMenu(false);
+  };
+
+  // Handle theme toggle for admin users
+  const handleThemeToggle = () => {
+    toggleTheme();
+    // Keep the dropdown open and maintain the shifted state after theme change
+    setTimeout(() => {
+      if (adminMenu && isAdmin) {
+        // Re-apply the shifted state after theme change
+        document.body.classList.add('admin-dropdown-open');
+        const selectors = [
+          '.page-content', 
+          'main', 
+          '.container', 
+          '.app-container',
+          '#root > div',
+          'body > div:first-child'
+        ];
+        
+        selectors.forEach(selector => {
+          const elements = document.querySelectorAll(selector);
+          elements.forEach(element => {
+            if (element && 
+                !element.classList.contains('navbar') && 
+                !element.classList.contains('navbar-sidebar') &&
+                !element.closest('.navbar') && 
+                !element.closest('.navbar-sidebar')) {
+              element.classList.add('shifted');
+            }
+          });
+        });
+      }
+    }, 50);
+  };
+
+  // Close admin menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (adminMenu && !event.target.closest('.admin-hamburger') && !event.target.closest('.admin-dropdown')) {
+        setAdminMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [adminMenu]);
+
   return (
     <>
       <div className={`navbar ${theme}`}>
-        <div className="navbar-contents navbar-left-margin" onClick={() => navigate(`/edit_profile`)}>
+        <div
+          className="navbar-contents navbar-left-margin"
+          onClick={() => navigate(`/edit_profile`)}
+        >
           <img
             className="pfp"
             src={photo}
@@ -48,52 +167,135 @@ useEffect(() => {
           />
           <div>{localStorage.getItem("name")}</div>
         </div>
-        <div className="navbar-contents navbar-displayed">
-          <p
-            className={`navbar-links ${
-              location.pathname === `/Dashboard` ? "active" : ""
-            }`}
-            onClick={() => navigate(`/Dashboard`)}
-          >
-            Dashboard
-          </p>
-          <p
-            className={`navbar-links ${
-              location.pathname === `/attendance_record` ? "active" : ""
-            }`}
-            onClick={() => navigate(`/attendance_record`)}
-          >
-            Attendance Record
-          </p>
-          {isAdmin && (
+
+        {/* If not admin → normal menu */}
+        {!isAdmin && (
+          <div className="navbar-contents navbar-displayed">
             <p
               className={`navbar-links ${
-                location.pathname === `/admin` ? "active" : ""
+                location.pathname === `/Dashboard` ? "active" : ""
               }`}
-              onClick={() => navigate(`/admin`)}
+              onClick={() => navigate(`/Dashboard`)}
             >
-              Upload Data
+              Dashboard
             </p>
-          )}
-        </div>
-        <div className="navbar-right-margin navbar-displayed">
-          <p className="toggle-head">
-            Toggle Theme:
-            <label className="switch">
-              <input
-                type="checkbox"
-                checked={theme === "dark"}
-                onChange={toggleTheme}
-              />
-              <span className="slider round"></span>
-            </label>
-          </p>
-          <p className="navbar-logout" onClick={handleLogout}>
-            <span className="logbut">
-              <FaPowerOff size={15} /> Logout
-            </span>
-          </p>
-        </div>
+            <p
+              className={`navbar-links ${
+                location.pathname === `/attendance_record` ? "active" : ""
+              }`}
+              onClick={() => navigate(`/attendance_record`)}
+            >
+              Attendance Record
+            </p>
+          </div>
+        )}
+
+        {/* Admin → hamburger dropdown */}
+        {isAdmin && (
+          <div className="navbar-contents navbar-displayed admin-nav">
+            <div className="admin-hamburger" onClick={toggleAdminMenu}>
+              {!adminMenu ? <FaBars size={22} /> : <FaTimes size={22} />}
+            </div>
+            
+            <div
+              className={`admin-dropdown ${theme} ${
+                adminMenu ? "show" : "hide"
+              }`}
+            >
+              <p
+                className={`navbar-links ${
+                  location.pathname === `/Dashboard` ? "active" : ""
+                }`}
+                onClick={() => {
+                  navigate(`/Dashboard`);
+                  closeAdminMenu();
+                }}
+              >
+                Dashboard
+              </p>
+              <p
+                className={`navbar-links ${
+                  location.pathname === `/attendance_record` ? "active" : ""
+                }`}
+                onClick={() => {
+                  navigate(`/attendance_record`);
+                  closeAdminMenu();
+                }}
+              >
+                Attendance Record
+              </p>
+              <p
+                className={`navbar-links ${
+                  location.pathname === `/admin` ? "active" : ""
+                }`}
+                onClick={() => {
+                  navigate(`/admin`);
+                  closeAdminMenu();
+                }}
+              >
+                Upload Data
+              </p>
+              <p
+                className={`navbar-links ${
+                  location.pathname === `/student_management` ? "active" : ""
+                }`}
+                onClick={() => {
+                  navigate(`/student_management`);
+                  closeAdminMenu();
+                }}
+              >
+                Student Management
+              </p>
+              <hr />
+              <p className="toggle-head">
+                Toggle Theme:
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    checked={theme === "dark"}
+                    onChange={handleThemeToggle}
+                  />
+                  <span className="slider round"></span>
+                </label>
+              </p>
+              <p
+                className="navbar-logout"
+                onClick={() => {
+                  handleLogout();
+                  closeAdminMenu();
+                }}
+              >
+                <span className="logbut">
+                  <FaPowerOff size={15} /> Logout
+                </span>
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Normal users still see toggle + logout */}
+        {!isAdmin && (
+          <div className="navbar-right-margin navbar-displayed">
+            <p className="toggle-head">
+              Toggle Theme:
+              <label className="switch">
+                <input
+                  type="checkbox"
+                  checked={theme === "dark"}
+                  onChange={toggleTheme}
+                />
+                <span className="slider round"></span>
+              </label>
+            </p>
+            <p className="navbar-logout" onClick={handleLogout}>
+              <span className="logbut">
+                <FaPowerOff size={15} /> Logout
+              </span>
+            </p>
+          </div>
+        )}
+
+        {/* Mobile menu toggle (same for all) */}
         <div className="navbar-menu navbar-right-margin">
           <div
             className={`icon-container ${open ? "open" : ""}`}
@@ -103,6 +305,8 @@ useEffect(() => {
           </div>
         </div>
       </div>
+
+      {/* Sidebar (kept same) */}
       <div className={`navbar-sidebar ${theme}`}>
         <ul type="none" className="navbar-sidebar-ul">
           <li>
@@ -112,7 +316,7 @@ useEffect(() => {
               }`}
               onClick={() => {
                 navigate(`/Dashboard`);
-                responsive(); // close sidebar after click
+                responsive();
               }}
             >
               Dashboard
@@ -125,50 +329,92 @@ useEffect(() => {
               }`}
               onClick={() => {
                 navigate(`/attendance_record`);
-                responsive(); // close sidebar after click
+                responsive();
               }}
             >
               Attendance Record
             </p>
             {isAdmin && (
-              <p
-                className={`navbar-links ${theme} ${
-                  location.pathname === `/admin` ? "active" : ""
-                }`}
-                onClick={() => {
-                  navigate(`/admin`);
-                  responsive(); // close sidebar after click
-                }}
-              >
-                Upload Data
-              </p>
+              <>
+                <p
+                  className={`navbar-links ${theme} ${
+                    location.pathname === `/admin` ? "active" : ""
+                  }`}
+                  onClick={() => {
+                    navigate(`/admin`);
+                    responsive();
+                  }}
+                >
+                  Upload Data
+                </p>
+                <p
+                  className={`navbar-links ${theme} ${
+                    location.pathname === `/student_management` ? "active" : ""
+                  }`}
+                  onClick={() => {
+                    navigate(`/student_management`);
+                    responsive();
+                  }}
+                >
+                  Student Management
+                </p>
+              </>
             )}
           </li>
 
-          <li>
-            <p className={`toggle-head ${theme}`}>
-              Toggle Theme:
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={theme === "dark"}
-                  onChange={toggleTheme}
-                />
-                <span className="slider round"></span>
-              </label>
-            </p>
-            <p
-              className={`navbar-logout navbar-logout-menu ${theme}`}
-              onClick={() => {
-                handleLogout();
-                responsive(); // close sidebar after logout
-              }}
-            >
-              <span className="logbut">
-                <FaPowerOff size={15} /> Logout
-              </span>
-            </p>
-          </li>
+          {!isAdmin && (
+            <li>
+              <p className={`toggle-head ${theme}`}>
+                Toggle Theme:
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    checked={theme === "dark"}
+                    onChange={toggleTheme}
+                  />
+                  <span className="slider round"></span>
+                </label>
+              </p>
+              <p
+                className={`navbar-logout navbar-logout-menu ${theme}`}
+                onClick={() => {
+                  handleLogout();
+                  responsive();
+                }}
+              >
+                <span className="logbut">
+                  <FaPowerOff size={15} /> Logout
+                </span>
+              </p>
+            </li>
+          )}
+
+          {isAdmin && (
+            <li>
+              <p className={`toggle-head ${theme}`}>
+                Toggle Theme:
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    checked={theme === "dark"}
+                    onChange={toggleTheme}
+                  />
+                  <span className="slider round"></span>
+                </label>
+              </p>
+              <p
+                className={`navbar-logout navbar-logout-menu ${theme}`}
+                onClick={() => {
+                  handleLogout();
+                  responsive();
+                }}
+              >
+                <span className="logbut">
+                  <FaPowerOff size={15} /> Logout
+                </span>
+              </p>
+            </li>
+          )}
         </ul>
       </div>
     </>
