@@ -236,16 +236,17 @@ const Navbar = ({ theme, toggleTheme }) => {
                 Upload Data
               </p>
               <p
-                className={`navbar-links ${
-                  location.pathname === `/student_management` ? "active" : ""
-                }`}
-                onClick={() => {
-                  navigate(`/student_management`);
-                  closeAdminMenu();
-                }}
-              >
-                Student Management
-              </p>
+                    className={`navbar-links ${theme} ${
+                    location.pathname === `/StudentManagement` ? "active" : ""
+                     }`}
+                    onClick={() => {
+                    navigate(`/StudentManagement`);
+                     responsive();
+                       }}
+                    >
+                    Student Management
+                     </p>
+
               <hr />
               <p className="toggle-head">
                 Toggle Theme:
@@ -349,10 +350,10 @@ const Navbar = ({ theme, toggleTheme }) => {
                 </p>
                 <p
                   className={`navbar-links ${theme} ${
-                    location.pathname === `/student_management` ? "active" : ""
+                    location.pathname === `/StudentManagement` ? "active" : ""
                   }`}
                   onClick={() => {
-                    navigate(`/student_management`);
+                    navigate(`/StudentManagement`);
                     responsive();
                   }}
                 >
