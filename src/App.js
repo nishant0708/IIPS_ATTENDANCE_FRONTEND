@@ -14,6 +14,7 @@ import Record from './Attendance_Record/Record';
 import StudentDetail from './StudentDetail/StudentDetail';
 import AdminPage from './Admin/AdminPage';
 import Profile from './profile/profile';
+import StudentManagement from './StudentManagement/StudentManagement';
 
 
 
@@ -71,8 +72,12 @@ const [Admin, setAdmin] = useState(false);
         <Route path="/student/:studentId" element={<StudentDetail />} />
         <Route path="/edit_profile" element={<Profile />} />
         {Admin && (
-        <Route path="/admin" element={<AdminPage />} />
+          <>
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/studentManagement" element={<StudentManagement />} />
+          </>
         )}
+
         </>
       )}
 
