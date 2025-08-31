@@ -1,0 +1,435 @@
+/* StudentDashboard.css */
+
+:root {
+  --background-color-light: #ffffff;
+  --text-color-light: #000000;
+  --background-color-dark: #1a1a1a;
+  --text-color-dark: #ffffff;
+  --secondary-background-color-light: #f0f0f0;
+  --secondary-background-color-dark: #222222;
+  --border-color-light: #cccccc;
+  --border-color-dark: #444444;
+  --button-background-color-light: #4CAF50;
+  --button-background-color-dark: #4CAF50;
+  --button-hover-color-light: #45a049;
+  --button-hover-color-dark: #45a049;
+  --button-submit-background-color-light: #2196F3;
+  --button-submit-background-color-dark: #2196F3;
+  --button-submit-hover-color-light: #0b7dda;
+  --button-submit-hover-color-dark: #0b7dda;
+  --message-border-color-light: #ff9800;
+  --message-border-color-dark: #ff9800;
+  --danger-color-light: #f44336;
+  --danger-color-dark: #f44336;
+  --success-color-light: #4CAF50;
+  --success-color-dark: #4CAF50;
+}
+
+.studentdashboard_container {
+  background-color: var(--background-color-dark);
+  color: var(--text-color-dark);
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.studentdashboard_container.light {
+  background-color: var(--background-color-light);
+  color: var(--text-color-light);
+}
+
+.studentdashboard_container.dark {
+  background-color: var(--background-color-dark);
+  color: var(--text-color-dark);
+}
+
+.studentdashboard_section {
+  margin: 20px auto;
+  
+}
+
+.studentdashboard_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.studentdashboard_header h2 {
+  margin: 0;
+  font-size: 24px;
+  color: inherit;
+}
+
+.studentdashboard_add_btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  background-color: var(--button-submit-background-color-light);
+  color: white;
+}
+
+.studentdashboard_container.dark .studentdashboard_add_btn {
+  background-color: var(--button-submit-background-color-dark);
+}
+
+.studentdashboard_add_btn:hover {
+  background-color: var(--button-submit-hover-color-light);
+}
+
+.studentdashboard_container.dark .studentdashboard_add_btn:hover {
+  background-color: var(--button-submit-hover-color-dark);
+}
+
+.studentdashboard_icon {
+  width: 18px;
+  height: 18px;
+}
+
+.studentdashboard_add_form {
+  margin-bottom: 25px;
+  background-color: var(--secondary-background-color-light);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.studentdashboard_container.dark .studentdashboard_add_form {
+  background-color: var(--secondary-background-color-dark);
+}
+
+.studentdashboard_add_form h3 {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  color: inherit;
+}
+
+.studentdashboard_form_grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.studentdashboard_form_group {
+  display: flex;
+  flex-direction: column;
+  min-width: 250px;
+}
+
+.studentdashboard_form_group label {
+  margin-bottom: 8px;
+  font-size: 16px;
+  color: inherit;
+}
+
+.studentdashboard_form_input,
+.studentdashboard_form_select {
+  padding: 10px 15px;
+  border-radius: 4px;
+  background-color: var(--secondary-background-color-light);
+  color: inherit;
+  border: 1px solid var(--border-color-light);
+  font-size: 16px;
+}
+
+.studentdashboard_container.dark .studentdashboard_form_input,
+.studentdashboard_container.dark .studentdashboard_form_select {
+  background-color: var(--secondary-background-color-dark);
+  border: 1px solid var(--border-color-dark);
+}
+
+.studentdashboard_form_input:disabled,
+.studentdashboard_form_select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.studentdashboard_form_actions {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.studentdashboard_btn_save,
+.studentdashboard_btn_cancel {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  min-width: 120px;
+}
+
+.studentdashboard_btn_save {
+  background-color: var(--button-background-color-light);
+  color: white;
+}
+
+.studentdashboard_container.dark .studentdashboard_btn_save {
+  background-color: var(--button-background-color-dark);
+}
+
+.studentdashboard_btn_save:hover:not(:disabled) {
+  background-color: var(--button-hover-color-light);
+}
+
+.studentdashboard_container.dark .studentdashboard_btn_save:hover:not(:disabled) {
+  background-color: var(--button-hover-color-dark);
+}
+
+.studentdashboard_btn_save:disabled {
+  background-color: #555555;
+  cursor: not-allowed;
+}
+
+.studentdashboard_btn_cancel {
+  background-color: var(--secondary-background-color-light);
+  color: inherit;
+  border: 1px solid var(--border-color-light);
+}
+
+.studentdashboard_container.dark .studentdashboard_btn_cancel {
+  background-color: var(--secondary-background-color-dark);
+  border: 1px solid var(--border-color-dark);
+}
+
+.studentdashboard_btn_cancel:hover {
+  opacity: 0.8;
+}
+
+.studentdashboard_filter_controls {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  background-color: var(--secondary-background-color-light);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.studentdashboard_container.dark .studentdashboard_filter_controls {
+  background-color: var(--secondary-background-color-dark);
+}
+
+.studentdashboard_btn_fetch {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  min-width: 150px;
+  height: 45px;
+  background-color: var(--button-background-color-light);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.studentdashboard_container.dark .studentdashboard_btn_fetch {
+  background-color: var(--button-background-color-dark);
+}
+
+.studentdashboard_btn_fetch:hover:not(:disabled) {
+  background-color: var(--button-hover-color-light);
+}
+
+.studentdashboard_container.dark .studentdashboard_btn_fetch:hover:not(:disabled) {
+  background-color: var(--button-hover-color-dark);
+}
+
+.studentdashboard_btn_fetch:disabled {
+  background-color: #555555;
+  cursor: not-allowed;
+}
+
+.studentdashboard_search_container {
+  margin-bottom: 25px;
+}
+
+.studentdashboard_search_bar {
+  position: relative;
+  max-width: 500px;
+  right: 0px;
+}
+.studentdashboard_search_add_container{
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.studentdashboard_search_icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: var(--text-color-light);
+  pointer-events: none;
+}
+
+.studentdashboard_container.dark .studentdashboard_search_icon {
+  color: var(--text-color-dark);
+}
+
+.studentdashboard_search_input {
+  width: 100%;
+  padding: 10px 15px 10px 45px;
+  border-radius: 4px;
+  background-color: var(--secondary-background-color-light);
+  color: inherit;
+  border: 1px solid var(--border-color-light);
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.studentdashboard_container.dark .studentdashboard_search_input {
+  background-color: var(--secondary-background-color-dark);
+  border: 1px solid var(--border-color-dark);
+}
+
+.studentdashboard_students_container {
+  background-color: var(--secondary-background-color-light);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.studentdashboard_container.dark .studentdashboard_students_container {
+  background-color: var(--secondary-background-color-dark);
+}
+
+.studentdashboard_students_info {
+  background-color: var(--secondary-background-color-light);
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.studentdashboard_container.dark .studentdashboard_students_info {
+  background-color: var(--secondary-background-color-dark);
+}
+
+.studentdashboard_students_info h3 {
+  margin: 0 0 10px 0;
+  color: var(--button-background-color-light);
+  font-size: 18px;
+}
+
+.studentdashboard_students_info span {
+  color: inherit;
+  font-weight: 500;
+}
+
+.studentdashboard_students_grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.studentdashboard_empty_state {
+  text-align: center;
+  padding: 40px 20px;
+  background-color: var(--secondary-background-color-light);
+  border-radius: 8px;
+  color: inherit;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.studentdashboard_container.dark .studentdashboard_empty_state {
+  background-color: var(--secondary-background-color-dark);
+}
+
+.studentdashboard_empty_state p {
+  margin: 0;
+  font-size: 18px;
+}
+
+.message {
+  padding: 12px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  background-color: var(--secondary-background-color-light);
+  color: inherit;
+  border-left: 4px solid var(--message-border-color-light);
+}
+
+.studentdashboard_container.dark .message {
+  background-color: var(--secondary-background-color-dark);
+  border-left: 4px solid var(--message-border-color-dark);
+}
+
+@media (max-width: 768px) {
+  .studentdashboard_header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .studentdashboard_header h2 {
+    text-align: center;
+  }
+  
+  .studentdashboard_add_btn {
+    justify-content: center;
+  }
+  
+  .studentdashboard_form_grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .studentdashboard_filter_controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .studentdashboard_filter_controls .studentdashboard_form_group {
+    width: 100%;
+  }
+  
+  .studentdashboard_form_actions {
+    flex-direction: column;
+  }
+  
+  .studentdashboard_students_grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 500px) {
+  .studentdashboard_filter_controls {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+  }
+  
+  .studentdashboard_filter_controls .studentdashboard_form_group {
+    width: 100%;
+  }
+  
+  .studentdashboard_section {
+    padding: 10px;
+  }
+  
+  .studentdashboard_add_form,
+  .studentdashboard_filter_controls,
+  .studentdashboard_students_container {
+    padding: 15px;
+  }
+}

@@ -1,9 +1,16 @@
 import React, { useState } from 'react';
 import { Edit, Trash2, Save, X, PlusCircle, MinusCircle } from 'lucide-react';
+import "./StudentCard.css";
 
 const StudentCard = ({ student, onEdit, onDelete, onSave }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedStudent, setEditedStudent] = useState(student);
+
+  // ✅ Helper function to display "null" for empty values
+  const displayValue = (value) => {
+    if (value === null || value === undefined || value === "") return "null";
+    return value;
+  };
 
   const handleEditClick = () => {
     setIsEditing(true);
@@ -57,7 +64,6 @@ const StudentCard = ({ student, onEdit, onDelete, onSave }) => {
             >
               <Edit className="icon" />
             </button>
-            
             <button
               onClick={() => onDelete(student.id)}
               className="action-btn delete-btn"
@@ -68,17 +74,17 @@ const StudentCard = ({ student, onEdit, onDelete, onSave }) => {
           </>
         )}
       </div>
-      
+
       <div className="student-info">
         <div className="student-avatar">
-          {(isEditing ? editedStudent.name : student.name).charAt(0)}
+          {(isEditing ? editedStudent.name : student.name)?.charAt(0) || "N"}
         </div>
         <div className="student-details">
           {isEditing ? (
             <>
               <input
                 type="text"
-                value={editedStudent.name}
+                value={editedStudent.name || ""}
                 onChange={(e) => handleFieldChange('name', e.target.value)}
                 className="edit-input name-input"
                 placeholder="Student Name"
@@ -87,7 +93,7 @@ const StudentCard = ({ student, onEdit, onDelete, onSave }) => {
                 <span className="field-label">Roll No:</span>
                 <input
                   type="text"
-                  value={editedStudent.rollNo}
+                  value={editedStudent.rollNo || ""}
                   onChange={(e) => handleFieldChange('rollNo', e.target.value)}
                   className="edit-input"
                   placeholder="Roll Number"
@@ -97,7 +103,7 @@ const StudentCard = ({ student, onEdit, onDelete, onSave }) => {
                 <span className="field-label">Section:</span>
                 <input
                   type="text"
-                  value={editedStudent.section}
+                  value={editedStudent.section || ""}
                   onChange={(e) => handleFieldChange('section', e.target.value)}
                   className="edit-input"
                   placeholder="Section"
@@ -153,7 +159,7 @@ const StudentCard = ({ student, onEdit, onDelete, onSave }) => {
                 <span className="field-label">Mobile:</span>
                 <input
                   type="tel"
-                  value={editedStudent.mobile}
+                  value={editedStudent.mobile || ""}
                   onChange={(e) => handleFieldChange('mobile', e.target.value)}
                   className="edit-input"
                   placeholder="Mobile Number"
@@ -163,7 +169,7 @@ const StudentCard = ({ student, onEdit, onDelete, onSave }) => {
                 <span className="field-label">Email:</span>
                 <input
                   type="email"
-                  value={editedStudent.email}
+                  value={editedStudent.email || ""}
                   onChange={(e) => handleFieldChange('email', e.target.value)}
                   className="edit-input"
                   placeholder="Email Address"
@@ -172,28 +178,30 @@ const StudentCard = ({ student, onEdit, onDelete, onSave }) => {
             </>
           ) : (
             <>
-              <h3>{student.name}</h3>
+              <h3>{displayValue(student.name)}</h3>
               <div className="student-field">
                 <span className="field-label">Roll No:</span>
-                <span className="field-value">{student.rollNo}</span>
+                <span className="field-value">{displayValue(student.rollNo)}</span>
               </div>
               <div className="student-field">
                 <span className="field-label">Section:</span>
-                <span className="field-value">{student.section}</span>
+                <span className="field-value">{displayValue(student.section)}</span>
               </div>
               <div className="student-field">
                 <span className="field-label">Specializations:</span>
                 <span className="field-value">
-                  {(student.specialization || []).join(", ")}
+                  {(student.specialization && student.specialization.length > 0)
+                    ? student.specialization.join(", ")
+                    : "null"}
                 </span>
               </div>
               <div className="student-field">
                 <span className="field-label">Mobile:</span>
-                <span className="field-value">{student.mobile}</span>
+                <span className="field-value">{displayValue(student.mobile)}</span>
               </div>
               <div className="student-field">
                 <span className="field-label">Email:</span>
-                <span className="field-value">{student.email}</span>
+                <span className="field-value">{displayValue(student.email)}</span>
               </div>
             </>
           )}
