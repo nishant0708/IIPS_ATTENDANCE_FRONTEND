@@ -10,7 +10,7 @@ export default function Error404() {
 
   const handleGoBack = () => {
     if (sessionId) {
-      navigate('/teacherDashboard');
+      navigate('/Dashboard');
     } else {
       navigate('/');
     }
