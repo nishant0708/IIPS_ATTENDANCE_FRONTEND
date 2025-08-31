@@ -99,11 +99,13 @@
   /* background-color: var(--navbar-logout-background-color-light); */
   transition: 0.3s all;
 }
-.toggle-head{
+
+.toggle-head {
   display: flex;
   align-items: center;
   justify-content: center;
 }
+
 .navbar.dark .navbar-logout {
   background-color: var(--navbar-logout-background-color-dark);
 }
@@ -152,23 +154,204 @@
   transform: rotate(90deg);
 }
 
+.admin-hamburger {
+  cursor: pointer;
+  margin-right: 15px;
+  position: relative;
+}
+
+.admin-dropdown {
+  position: fixed;
+  top: 0px;
+  right: 0;
+  bottom: 0;
+  height: calc(100vh);
+  border-radius: 0 0 0 10px;
+  box-shadow: -4px 0px 20px rgba(0,0,0,0.15);
+  padding: 15px 0;
+  min-width: 220px;
+  width: 220px;
+  overflow-y: auto;
+  opacity: 0;
+  transition: all 0.3s ease-in-out;
+  z-index: 4444;
+  transform: translateX(100%);
+  border-left: 1px solid rgba(0,0,0,0.1);
+}
+
+/* Force background colors with higher specificity */
+.navbar.light .admin-dropdown.light {
+    padding-top: 35px;
+  background-color: #e0e0e0 !important;
+  color: #000000 !important;
+  border-left: 1px solid rgba(0,0,0,0.1);
+  box-shadow: -4px 0px 20px rgba(0,0,0,0.15);
+}
+
+.navbar.dark .admin-dropdown.dark {
+  padding-top: 35px;
+  background-color: #282828 !important;
+  color: #ffffff !important;
+  border-left: 1px solid rgba(255,255,255,0.1);
+  box-shadow: -4px 0px 20px rgba(0,0,0,0.5);
+}
+.navbar-logout{
+  position: absolute;
+  bottom: 60px; 
+}
+.admin-dropdown .navbar-logout.light {
+  background-color: #b5b0b0 !important;
+}
+.logbut{
+color: #ff4444 !important;
+}
+
+.admin-dropdown.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Dropdown items styling with theme specificity */
+.navbar.light .admin-dropdown.light p,
+.navbar.dark .admin-dropdown.dark p {
+  margin: 0;
+  padding: 15px 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  margin: 4px 10px;
+  min-height: 40px;
+  width: calc(100% - 20px);
+  box-sizing: border-box;
+}
+
+.navbar.light .admin-dropdown.light p {
+  color: #000000 !important;
+}
+
+.navbar.dark .admin-dropdown.dark p {
+  color: #ffffff !important;
+}
+
+.navbar.light .admin-dropdown.light p:hover,
+.navbar.dark .admin-dropdown.dark p:hover {
+  background-color: #4caf50 !important;
+  color: #000000 !important;
+  transform: translateX(-2px);
+}
+
+.admin-dropdown hr {
+  margin: 15px 10px;
+  border: none;
+  border-top: 2px solid rgba(0, 0, 0, 0.1);
+  width: calc(100% - 20px);
+}
+
+.admin-dropdown.light hr {
+  border-top: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.admin-dropdown.dark hr {
+  border-top: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.admin-dropdown .toggle-head {
+  margin: 8px 10px;
+  padding: 15px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 40px;
+  width: calc(100% - 20px);
+  box-sizing: border-box;
+}
+
+.admin-dropdown .navbar-logout {
+  margin: 8px 10px;
+  width: calc(100% - 20px);
+  height: auto;
+  padding: 15px 10px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  background-color: transparent;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 40px;
+  box-sizing: border-box;
+}
+
+.admin-dropdown .navbar-logout:hover {
+  background-color: #ff4444 !important;
+  color: white !important;
+  transform: translateX(-2px);
+}
+
+/* Page content shift animation - ensure proper alignment */
+.page-content,
+main,
+.container,
+.app-container,
+#root > div,
+body > div:first-child {
+  transition: margin-right 0.3s ease-in-out;
+}
+
+.page-content.shifted,
+main.shifted,
+.container.shifted,
+.app-container.shifted,
+#root > div.shifted,
+body.admin-dropdown-open > div:first-child:not(.navbar):not(.navbar-sidebar) {
+  margin-right: 220px;
+}
+
+/* Ensure content aligns properly with dropdown */
+.admin-dropdown-open .page-content,
+.admin-dropdown-open main,
+.admin-dropdown-open .container,
+.admin-dropdown-open .app-container {
+  box-sizing: border-box;
+}
+
+/* Admin navbar contents positioning */
+.navbar-contents.admin-nav {
+  position: relative;
+}
+
 @media (max-width: 900px) {
   body {
     overflow-x: hidden;
   }
 
-  .toggle-head{
+  .toggle-head {
     display: block;
-   height: 40px;
-   font-size: larger;
-   display: flex;
-   align-items: center;
-   justify-content: left;
+    height: 40px;
+    font-size: larger;
+    display: flex;
+    align-items: center;
+    justify-content: left;
     border-bottom: 1px solid rgba(255, 255, 255, 0.253);
   }
-  .toggle-head.light{
+  
+  .toggle-head.light {
     border-bottom: 1px solid rgba(0, 0, 0, 0.253);
   }
+  
   .navbar {
     box-shadow: 2px 2px 10px rgb(0, 0, 0);
   }
@@ -180,6 +363,7 @@
   .navbar-displayed {
     display: none;
   }
+  
   .navbar-sidebar-ul {
     margin: 0px;
     padding: 0px 20px;
@@ -194,8 +378,9 @@
     margin-top: 10px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.253);
   }
+  
   .navbar-logout-menu.light,
-  .navbar-links.light{
+  .navbar-links.light {
     border-bottom: 1px solid rgba(0, 0, 0, 0.253);
   }
 
@@ -208,9 +393,23 @@
     height: 100vh;
     overflow-y: auto;
   }
+  
   .switch {
     margin-left: 20px;
   }
+
+  /* Hide page shift on mobile and reset any shifted content */
+  .page-content.shifted,
+  main.shifted,
+  .container.shifted,
+  .app-container.shifted,
+  body.admin-dropdown-open > div:not(.navbar):not(.navbar-sidebar) {
+    margin-right: 0;
+  }
+  .navbar-logout{
+  position: relative;
+ bottom: 0px;
+}
 }
 
 .switch {
@@ -239,6 +438,7 @@
   transition: 0.4s;
   border-radius: 34px;
 }
+
 
 .slider:before {
   position: absolute;
