@@ -225,6 +225,30 @@ const Navbar = ({ theme, toggleTheme }) => {
                 Attendance Record
               </p>
               <p
+                    className={`navbar-links ${theme} ${
+                    location.pathname === `/TeacherManagement` ? "active" : ""
+                     }`}
+                    onClick={() => {
+                    navigate(`/TeacherManagement`);
+                     closeAdminMenu();
+                       }}
+                    >
+                    Teacher Management
+                     </p>
+
+              <hr />
+               <p
+                    className={`navbar-links ${theme} ${
+                    location.pathname === `/StudentManagement` ? "active" : ""
+                     }`}
+                    onClick={() => {
+                    navigate(`/StudentManagement`);
+                     closeAdminMenu();
+                       }}
+                    >
+                    Student Management
+                     </p>
+              <p
                 className={`navbar-links ${
                   location.pathname === `/admin` ? "active" : ""
                 }`}
@@ -235,19 +259,10 @@ const Navbar = ({ theme, toggleTheme }) => {
               >
                 Upload Data
               </p>
-              <p
-                    className={`navbar-links ${theme} ${
-                    location.pathname === `/StudentManagement` ? "active" : ""
-                     }`}
-                    onClick={() => {
-                    navigate(`/StudentManagement`);
-                     responsive();
-                       }}
-                    >
-                    Student Management
-                     </p>
+             
 
               <hr />
+               
               <p className="toggle-head">
                 Toggle Theme:
                 <label className="switch">
@@ -259,6 +274,8 @@ const Navbar = ({ theme, toggleTheme }) => {
                   <span className="slider round"></span>
                 </label>
               </p>
+             
+               <hr />
               <p
                 className="navbar-logout"
                 onClick={() => {
@@ -266,10 +283,12 @@ const Navbar = ({ theme, toggleTheme }) => {
                   closeAdminMenu();
                 }}
               >
+               
                 <span className="logbut">
                   <FaPowerOff size={15} /> Logout
                 </span>
               </p>
+             
             </div>
           </div>
         )}
@@ -347,6 +366,17 @@ const Navbar = ({ theme, toggleTheme }) => {
                   }}
                 >
                   Upload Data
+                </p>
+                <p
+                  className={`navbar-links ${theme} ${
+                    location.pathname === `/TeacherManagement` ? "active" : ""
+                  }`}
+                  onClick={() => {
+                    navigate(`/TeacherManagement`);
+                    responsive();
+                  }}
+                >
+                  Teacher Management
                 </p>
                 <p
                   className={`navbar-links ${theme} ${

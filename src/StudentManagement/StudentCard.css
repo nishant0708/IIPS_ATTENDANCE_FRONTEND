@@ -6,13 +6,16 @@
   --primary-color-hover: #26db65;
   --primary-color-alpha: rgba(59, 130, 246, 0.1);
 
-  --success-color: #10b981;
+  --success-color: #4caf50;
   --success-color-hover: #059669;
   --success-color-alpha: rgba(16, 185, 129, 0.1);
 
   --danger-color: #ef4444;
   --danger-color-hover: #dc2626;
   --danger-color-alpha: rgba(239, 68, 68, 0.1);
+
+  --warning-color: #ffa500;
+  --warning-color-hover: #ff8c00;
 
   --disabled-color: #9ca3af;
   --border-color: #e5e7eb;
@@ -22,9 +25,11 @@
   --card-background: #ffffff;
   --student-card-background: #ffffff;
   --input-background: #ebeaea;
+  --modal-background: #ffffff;
 
   --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   --card-hover-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  --modal-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
 }
 
 .dark {
@@ -35,9 +40,11 @@
   --card-background: #212121;
   --student-card-background: #282828;
   --input-background: #282828;
+  --modal-background: #2d2d2d;
 
   --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   --card-hover-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  --modal-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
 }
 
 /* ============================
@@ -129,6 +136,15 @@
 }
 .add-btn:hover {
   background: var(--primary-color-hover);
+  transform: scale(1.05);
+}
+
+.password-btn {
+  background: var(--warning-color);
+  color: white;
+}
+.password-btn:hover {
+  background: var(--warning-color-hover);
   transform: scale(1.05);
 }
 
@@ -224,15 +240,276 @@
   gap: 6px;
 }
 
+/* ============================
+   👨‍🏫 Teacher Card Additional Styles
+   ============================ */
+
+/* Faculty ID highlighting */
+.faculty-id-highlight {
+  background: linear-gradient(135deg, var(--primary-color-alpha), var(--success-color-alpha));
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+}
+
+.dark .faculty-id-highlight {
+  background: linear-gradient(135deg, rgba(74, 175, 80, 0.2), rgba(16, 185, 129, 0.2));
+  color: var(--primary-color-hover);
+  border-color: var(--primary-color-hover);
+}
+
+/* Non-editable fields styling */
+.non-editable-field {
+  background: var(--background-color);
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 2px solid var(--border-color);
+  color: var(--text-secondary);
+  font-style: italic;
+  opacity: 0.8;
+}
+
+/* Subject access field adjustments */
+.subject-access-display {
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  background: var(--background-color);
+  padding: 3px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+/* Subject Access Editing Styles */
+.subject-access-field {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.subject-access-label {
+  margin-bottom: 8px;
+}
+
+.subject-search-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.subject-search-input-wrapper {
+  flex: 1;
+  position: relative;
+}
+
+.subject-search-input {
+  padding-right: 30px;
+}
+
+.subject-search-icon {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  width: 16px;
+  height: 16px;
+}
+
+.subject-add-icon {
+  color: var(--primary-color);
+  cursor: pointer;
+  align-self: center;
+  width: 16px;
+  height: 16px;
+  transition: all 0.2s ease;
+}
+
+.subject-add-icon:hover {
+  color: var(--primary-color-hover);
+  transform: scale(1.1);
+}
+
+/* Subject Dropdown */
+.subject-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--modal-background);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: var(--card-shadow);
+}
+
+.subject-dropdown-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 14px;
+  color: var(--text-color);
+  transition: background-color 0.2s ease;
+}
+
+.subject-dropdown-item:hover {
+  background-color: var(--background-color);
+}
+
+.subject-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.subject-dropdown-empty {
+  padding: 8px 12px;
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 14px;
+}
+
+.dropdown-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+}
+
+/* Selected Subjects Display */
+.selected-subjects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.subject-tag {
+  display: flex;
+  align-items: center;
+  background: var(--primary-color);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 16px;
+  font-size: 12px;
+  gap: 6px;
+}
+
+.subject-remove-icon {
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+  transition: transform 0.2s ease;
+}
+
+.subject-remove-icon:hover {
+  transform: scale(1.2);
+}
+
+.no-subjects-message {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-style: italic;
+  margin: 0;
+}
+
+/* Password Change Modal Styles */
+.password-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.password-modal {
+  background: var(--modal-background);
+  padding: 20px;
+  border-radius: 8px;
+  min-width: 300px;
+  box-shadow: var(--modal-shadow);
+  border: 1px solid var(--border-color);
+}
+
+.password-modal-title {
+  margin-bottom: 15px;
+  color: var(--text-color);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.password-input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--input-background);
+  color: var(--text-color);
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+
+.password-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-color-alpha);
+}
+
+.password-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.password-cancel-btn {
+  padding: 8px 16px;
+  background: var(--text-secondary);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+
+.password-cancel-btn:hover {
+  background: var(--disabled-color);
+}
+
+.password-update-btn {
+  padding: 8px 16px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+
+.password-update-btn:hover {
+  background: var(--primary-color-hover);
+}
+
 /* Responsive */
 @media (max-width: 480px) {
   .student-card {
     padding: 15px;
   }
-  .edit-input{
+  
+  .edit-input {
     width: 90%;
   }
-  .field-value{
+  
+  .field-value {
     position: relative;
     left: 5px;
   }
@@ -243,7 +520,9 @@
     gap: 15px;
     align-items: center;
   }
-  .student-field{
+  
+  .student-field {
+    margin: 10px 0px;
     display: block;
   }
 
@@ -257,5 +536,28 @@
     min-width: 90px;
   }
 
-  
+  .subject-search-container {
+    flex-direction: column;
+    width: 90%;
+    gap: 10px;
+  }
+
+  .selected-subjects {
+    justify-content: center;
+  }
+
+  .password-modal {
+    margin: 0 20px;
+    min-width: 280px;
+  }
+
+  .password-modal-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .password-cancel-btn,
+  .password-update-btn {
+    width: 100%;
+  }
 }

@@ -15,6 +15,7 @@ import StudentDetail from './StudentDetail/StudentDetail';
 import AdminPage from './Admin/AdminPage';
 import Profile from './profile/profile';
 import StudentDashboard from './StudentManagement/StudentDashboard';
+import TeacherDashboard from './TeacherManagement/TeacherDashboard';
 
 
 
@@ -75,6 +76,7 @@ const [Admin, setAdmin] = useState(false);
           <>
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/studentManagement" element={<StudentDashboard />} />
+          <Route path="/teacherManagement" element={<TeacherDashboard />} />
           </>
         )}
 

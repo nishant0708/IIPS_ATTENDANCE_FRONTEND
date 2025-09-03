@@ -197,11 +197,14 @@
 }
 .admin-dropdown .navbar-logout{
   position: absolute;
+  display: flex;
+  justify-content: center !important;
+  background-color: rgb(251, 201, 201) !important;
+
   bottom: 60px; 
 }
-.admin-dropdown .navbar-logout.light {
-  background-color: #b5b0b0 !important;
-}
+
+
 .logbut{
 color: #ff4444 !important;
 }
@@ -221,7 +224,7 @@ color: #ff4444 !important;
   text-align: center;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   font-size: 16px;
   font-weight: 600;
   border-radius: 8px;
@@ -282,7 +285,7 @@ color: #ff4444 !important;
   width: calc(100% - 20px);
   height: auto;
   padding: 15px 10px;
-  border-radius: 8px;
+  justify-content: center;
   font-size: 16px;
   font-weight: 600;
   background-color: transparent;
@@ -457,4 +460,8 @@ input:checked + .slider:before {
 }
 .admin-dropdown .toggle-head:hover{
   background-color: transparent !important;
+}
+.admin-dropdown .navbar-logout.light {
+  background-color: #b5b0b0 !important;
+  border-radius:0px !important;
 }
