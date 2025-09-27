@@ -574,8 +574,6 @@ const fetchAttendanceSummaryWithDates = async (startDateParam, endDateParam) => 
     // Extract students array from response
     const studentsData = response.data.students || response.data || [];
     
-    console.log("🚀 Students Data:", studentsData);
-    console.log("🚀 Students Count:", studentsData.length);
 
     if (studentsData.length === 0) {
       const message = startDateParam && endDateParam 
@@ -738,19 +736,6 @@ const exportToExcel = () => {
       localStorage.setItem("theme", "light");
     }
   };
-
-  // Function to clear subjects cache (optional - for debugging/maintenance)
-  const clearSubjectsCache = () => {
-    setSubjectsCache({});
-    localStorage.removeItem("subjectsCache");
-    console.log("Subjects cache cleared");
-  };
-
-  // Debug: Monitor attendance summary changes
-  useEffect(() => {
-    console.log("🚀 Attendance Summary Updated:", attendanceSummary);
-    console.log("🚀 Should render table:", attendanceSummary.length > 0);
-  }, [attendanceSummary]);
 
   return (
     <div className={`record_container ${theme}`}>
