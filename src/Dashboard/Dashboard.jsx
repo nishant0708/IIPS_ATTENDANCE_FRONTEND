@@ -4,6 +4,9 @@ import Navbar from "../Navbar/Navbar";
 import axios from "axios";
 import Loader from "../Loader/Loader";
 import AlertModal from "../AlertModal/AlertModal";
+import { useSubjects } from "../hooks/useSubjects";
+import { useSpecializations } from "../hooks/useSpecializations";
+import { useAttendance } from "../hooks/useAttendance";
 
 const Dashboard = () => {
   const [course, setCourse] = useState("");
@@ -11,7 +14,6 @@ const Dashboard = () => {
   const [subject, setSubject] = useState("");
   const [specialization, setSpecialization] = useState("");
   const [section, setSection] = useState("");
-  const [subjects, setSubjects] = useState([]);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [attendanceMap, setAttendanceMap] = useState({});
@@ -20,16 +22,25 @@ const Dashboard = () => {
   const [isError, setIsError] = useState(false);
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
   const [availableSemesters, setAvailableSemesters] = useState([]);
-  const [loadingSubjects, setLoadingSubjects] = useState(false);
-  const [loadingCourses, setLoadingCourses] = useState(false);
-  const [courseConfig, setCourseConfig] = useState({});
-  
-  // Dynamic specialization states
-  const [availableSpecializations, setAvailableSpecializations] = useState([]);
-  const [hasSpecializations, setHasSpecializations] = useState(false);
-  const [loadingSpecializations, setLoadingSpecializations] = useState(false);
+  const [availableSectionOptions, setAvailableSectionOptions] = useState([]);
   
   const token = localStorage.getItem("token");
+
+  // Custom hooks
+  const { courseConfig, loadingCourses } = useAttendance();
+  const { 
+    subjects, 
+    loadingSubjects, 
+    fetchSubjects, 
+    resetSubjects 
+  } = useSubjects();
+  const {
+    availableSpecializations,
+    hasSpecializations,
+    loadingSpecializations,
+    fetchSpecializations,
+    resetSpecializations
+  } = useSpecializations();
 
   // Section options - default
   const sectionOptions = [
@@ -43,76 +54,6 @@ const Dashboard = () => {
     { value: "B", label: "B" },
     { value: "C", label: "C" }
   ];
-
-  // Fetch courses from API
-  const fetchCourses = async () => {
-    setLoadingCourses(true);
-    try {
-      const response = await axios.get(
-        `${process.env.REACT_APP_BACKEND_URL}/attendance`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.data.success) {
-        setCourseConfig(response.data.data);
-      } else {
-        showAlert("Failed to fetch courses", true);
-      }
-    } catch (error) {
-      console.error("Error fetching courses:", error);
-      showAlert("Failed to fetch courses. Please try again.", true);
-      setCourseConfig({});
-    } finally {
-      setLoadingCourses(false);
-    }
-  };
-
-  // Fetch specializations for a course and semester
-  const fetchSpecializations = async (courseName, semesterNum) => {
-    if (!courseName || !semesterNum || !courseConfig[courseName]) return;
-
-    setLoadingSpecializations(true);
-    try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_BACKEND_URL}/attendance/getspecializations`,
-        {
-          course: courseConfig[courseName]?.displayName,
-          semester: semesterNum,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const data = response.data;
-      setHasSpecializations(data.hasSpecializations);
-      setAvailableSpecializations(data.specializations || []);
-      
-      // If no specializations exist, clear the specialization field
-      if (!data.hasSpecializations) {
-        setSpecialization("");
-      }
-    } catch (error) {
-      console.error("Error fetching specializations:", error);
-      showAlert("Failed to fetch specializations. Please try again.", true);
-      setHasSpecializations(false);
-      setAvailableSpecializations([]);
-      setSpecialization("");
-    } finally {
-      setLoadingSpecializations(false);
-    }
-  };
-
-  // Load courses on component mount
-  useEffect(() => {
-    fetchCourses();
-  }, []);
 
   // Get section options based on course and semester
   const getSectionOptions = (courseKey, semesterNum) => {
@@ -144,7 +85,6 @@ const Dashboard = () => {
   };
 
   const [attendanceDate, setAttendanceDate] = useState(getCurrentDateIST());
-  const [availableSectionOptions, setAvailableSectionOptions] = useState(sectionOptions);
 
   // Function to get available semesters based on course configuration from API
   const getAvailableSemesters = (courseKey) => {
@@ -160,44 +100,13 @@ const Dashboard = () => {
     return availableSems;
   };
 
-  // Function to fetch subjects from API
-  const fetchSubjects = async (courseName, semesterNum) => {
-    if (!courseName || !semesterNum || !courseConfig[courseName]) return;
-
-    setLoadingSubjects(true);
-    try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_BACKEND_URL}/attendance/getsubjects`,
-        {
-          course: courseConfig[courseName]?.displayName,
-          semester: semesterNum,
-          specialization: hasSpecializations ? specialization : null,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setSubjects(response.data || []);
-      setSubject("");
-
-      if (response.data.length === 0) {
-        showAlert(
-          "No subjects found for the selected course and semester",
-          true
-        );
-      }
-    } catch (error) {
-      console.error("Error fetching subjects:", error);
-      showAlert("Failed to fetch subjects. Please try again.", true);
-      setSubjects([]);
-    } finally {
-      setLoadingSubjects(false);
-    }
+  const showAlert = (msg, error = false) => {
+    setModalMessage(msg);
+    setIsError(error);
+    setIsModalOpen(true);
   };
 
+  // Handle course change
   useEffect(() => {
     if (course && courseConfig[course]) {
       const semesters = getAvailableSemesters(course);
@@ -205,19 +114,19 @@ const Dashboard = () => {
 
       if (semester && !semesters.includes(parseInt(semester))) {
         setSemester("");
-        setSubjects([]);
+        resetSubjects();
         setSubject("");
       }
     } else {
       setAvailableSemesters([]);
-      setSubjects([]);
+      resetSubjects();
       setSubject("");
       setSpecialization("");
-      setHasSpecializations(false);
-      setAvailableSpecializations([]);
+      resetSpecializations();
     }
   }, [course, courseConfig]);
 
+  // Handle section options based on course and semester
   useEffect(() => {
     if (course && semester) {
       const sectionOpts = getSectionOptions(course, semester);
@@ -234,10 +143,12 @@ const Dashboard = () => {
   // Fetch specializations when course and semester change
   useEffect(() => {
     if (course && semester && courseConfig[course]) {
-      fetchSpecializations(course, semester);
+      fetchSpecializations(course, semester, courseConfig)
+        .catch(error => {
+          showAlert("Failed to fetch specializations. Please try again.", true);
+        });
     } else {
-      setHasSpecializations(false);
-      setAvailableSpecializations([]);
+      resetSpecializations();
       setSpecialization("");
     }
   }, [course, semester, courseConfig]);
@@ -247,19 +158,35 @@ const Dashboard = () => {
     if (course && semester && courseConfig[course]) {
       if (hasSpecializations) {
         if (specialization) {
-          fetchSubjects(course, semester);
+          fetchSubjects(course, semester, specialization, hasSpecializations, courseConfig)
+            .then(subjects => {
+              if (subjects.length === 0) {
+                showAlert("No subjects found for the selected course and semester", true);
+              }
+            })
+            .catch(error => {
+              showAlert("Failed to fetch subjects. Please try again.", true);
+            });
         } else {
-          setSubjects([]);
+          resetSubjects();
           setSubject("");
           setStudents([]);
         }
       } else {
-        fetchSubjects(course, semester);
+        fetchSubjects(course, semester, specialization, hasSpecializations, courseConfig)
+          .then(subjects => {
+            if (subjects.length === 0) {
+              showAlert("No subjects found for the selected course and semester", true);
+            }
+          })
+          .catch(error => {
+            showAlert("Failed to fetch subjects. Please try again.", true);
+          });
       }
       
       setStudents([]);
     } else {
-      setSubjects([]);
+      resetSubjects();
       setSubject("");
       setStudents([]);
     }
@@ -269,12 +196,11 @@ const Dashboard = () => {
     setCourse(e.target.value);
     setSemester("");
     setStudents([]);
-    setSubjects([]);
+    resetSubjects();
     setSubject("");
     setSpecialization("");
     setSection("");
-    setHasSpecializations(false);
-    setAvailableSpecializations([]);
+    resetSpecializations();
   };
 
   const handleSemesterChange = (e) => {
@@ -310,12 +236,6 @@ const Dashboard = () => {
     }
     
     setAttendanceDate(selectedDate);
-  };
-
-  const showAlert = (msg, error = false) => {
-    setModalMessage(msg);
-    setIsError(error);
-    setIsModalOpen(true);
   };
 
   const fetchStudents = async () => {
