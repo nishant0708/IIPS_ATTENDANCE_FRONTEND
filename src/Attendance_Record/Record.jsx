@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./Record.css";
 import Navbar from "../Navbar/Navbar";
-import axios from "axios";
 import Loader from "../Loader/Loader";
 import AlertModal from "../AlertModal/AlertModal";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -11,6 +10,7 @@ import ExcelExportButton from "./ExcelExportButton";
 import { useSubjects } from "../hooks/useSubjects";
 import { useSpecializations } from "../hooks/useSpecializations";
 import { useAttendance } from "../hooks/useAttendance";
+import { useAttendanceSummary } from "../hooks/useAttendanceSummary"; // Import the new hook
 
 const Record = () => {
   const navigate = useNavigate();
@@ -21,8 +21,6 @@ const Record = () => {
   const [specialization, setSpecialization] = useState("");
   const [section, setSection] = useState("");
   const [academicYear, setAcademicYear] = useState("");
-  const [attendanceSummary, setAttendanceSummary] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [isError, setIsError] = useState(false);
@@ -35,7 +33,6 @@ const Record = () => {
   const [isDateFilterModalOpen, setIsDateFilterModalOpen] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const token = localStorage.getItem("token");
 
   // Custom hooks - using same hooks as Dashboard
   const { courseConfig, loadingCourses } = useAttendance();
@@ -52,6 +49,19 @@ const Record = () => {
     fetchSpecializations,
     resetSpecializations
   } = useSpecializations();
+  
+  // Use the new attendance summary hook
+  const {
+    attendanceSummary,
+    loading: attendanceLoading,
+    error: attendanceError,
+    fetchAttendanceSummary,
+    fetchWithDateFilter,
+    clearAttendanceSummary,
+    calculatePercentage,
+    getAttendanceStatus,
+    getAttendanceStats
+  } = useAttendanceSummary();
 
   // Section options - same as Dashboard
   const sectionOptions = [
@@ -170,7 +180,7 @@ const Record = () => {
         } else {
           resetSubjects();
           setSubject("");
-          setAttendanceSummary([]);
+          clearAttendanceSummary(); // Use hook function
         }
       } else {
         fetchSubjects(course, semester, specialization, hasSpecializations, courseConfig)
@@ -184,11 +194,11 @@ const Record = () => {
           });
       }
       
-      setAttendanceSummary([]);
+      clearAttendanceSummary(); // Use hook function
     } else {
       resetSubjects();
       setSubject("");
-      setAttendanceSummary([]);
+      clearAttendanceSummary(); // Use hook function
     }
   }, [course, semester, specialization, hasSpecializations, courseConfig]);
 
@@ -256,7 +266,7 @@ const Record = () => {
 
     if (allFiltersSelected && shouldFetchData.current) {
       console.log("Auto-fetching attendance data");
-      fetchAttendanceSummary();
+      handleFetchAttendanceSummary();
       shouldFetchData.current = false;
     }
   }, [course, semester, subject, academicYear, specialization, section, subjects]);
@@ -284,7 +294,7 @@ const Record = () => {
     setSemester("");
     setSpecialization("");
     setSection("");
-    setAttendanceSummary([]);
+    clearAttendanceSummary();
     resetSubjects();
     setSubject("");
     resetSpecializations();
@@ -292,7 +302,7 @@ const Record = () => {
 
   const handleSemesterChange = (e) => {
     setSemester(e.target.value);
-    setAttendanceSummary([]);
+    clearAttendanceSummary();
     setSubject("");
     setSpecialization("");
     setSection("");
@@ -300,13 +310,13 @@ const Record = () => {
 
   const handleSpecializationChange = (e) => {
     setSpecialization(e.target.value);
-    setAttendanceSummary([]);
+    clearAttendanceSummary();
     setSubject("");
   };
 
   const handleSectionChange = (e) => {
     setSection(e.target.value);
-    setAttendanceSummary([]);
+    clearAttendanceSummary();
   };
 
   const handleSubjectChange = (e) => {
@@ -315,6 +325,26 @@ const Record = () => {
 
   const handleAcademicYearChange = (e) => {
     setAcademicYear(e.target.value);
+  };
+
+  // Main fetch function using the hook
+  const handleFetchAttendanceSummary = async () => {
+    const result = await fetchAttendanceSummary({
+      course,
+      semester,
+      subject,
+      academicYear,
+      specialization,
+      section,
+      startDate,
+      endDate,
+      subjects,
+      hasSpecializations,
+     // onSuccess: (message) => showAlert(message, false),
+      onError: showAlert
+    });
+
+    return result;
   };
 
   const handleDateFilterApply = async (newStartDate, newEndDate) => {
@@ -331,106 +361,21 @@ const Record = () => {
     };
     localStorage.setItem("attendanceFilters", JSON.stringify(updatedFilters));
     
-    // If we have attendance data, refetch with NEW date filter values
+    // If we have the required filters, refetch with NEW date filter values
     if (course && semester && subject && academicYear) {
-      await fetchAttendanceSummaryWithDates(newStartDate, newEndDate);
-    }
-  };
-
-  // Function to handle fetching with specific date parameters
-  const fetchAttendanceSummaryWithDates = async (startDateParam, endDateParam) => {
-    if (!course || !semester || !academicYear || !subject) {
-      showAlert(
-        "Please select Course, Semester, Subject, and Academic Year",
-        true
-      );
-      return;
-    }
-
-    // Check if specialization is required but not selected
-    if (hasSpecializations && !specialization) {
-      showAlert("Please select a Specialization", true);
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const selectedSubject = subjects.find(
-        (s) => s.Sub_Code === subject || s._id === subject
-      );
-
-      const requestData = {
-        course: selectedSubject?.Course_ID || "", 
+      await fetchWithDateFilter({
+        course,
         semester,
-        subject: subject.trim(),
+        subject,
         academicYear,
-      };
-
-      // Add specialization to request if required
-      if (hasSpecializations && specialization) {
-        requestData.specialization = specialization;
-      }
-
-      // Add section to request if selected
-      if (section) {
-        requestData.section = section;
-      } else {
-        requestData.section = null;
-      }
-
-      // Add date filters - use parameters instead of state
-      if (startDateParam && endDateParam) {
-        requestData.startDate = startDateParam;
-        requestData.endDate = endDateParam;
-      }
-
-      console.log("Request Data being sent:", requestData);
-
-      const response = await axios.post(
-        `${process.env.REACT_APP_BACKEND_URL}/attendance/getAttendanceByCourseAndSubject`,
-        requestData,{
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      console.log("Full API Response:", response.data);
-
-      // Extract students array from response
-      const studentsData = response.data.students || response.data || [];
-      
-
-      if (studentsData.length === 0) {
-        const message = startDateParam && endDateParam 
-          ? `No attendance records found for the selected criteria between ${startDateParam} and ${endDateParam}`
-          : "No attendance records found for the selected criteria";
-        showAlert(message, true);
-        setAttendanceSummary([]);
-      } else {
-        setAttendanceSummary(studentsData);
-        console.log("Attendance Summary Set Successfully:", studentsData);
-      }
-    } catch (error) {
-      console.error("Error fetching attendance summary:", error);
-      console.error("Error response:", error.response?.data);
-      showAlert("Failed to fetch attendance summary. Please try again.", true);
-      setAttendanceSummary([]);
-    } finally {
-      setLoading(false);
+        specialization,
+        section,
+        subjects,
+        hasSpecializations,
+      //  onSuccess: (message) => showAlert(message, false),
+        onError: showAlert
+      }, newStartDate, newEndDate);
     }
-  };
-
-  // Main fetch function
-  const fetchAttendanceSummary = async () => {
-    await fetchAttendanceSummaryWithDates(startDate, endDate);
-  };
-
-  // Calculate attendance percentage
-  const calculatePercentage = (present, total) => {
-    if (!total || total === 0) return 0;
-    return ((present / total) * 100).toFixed(2);
   };
 
   // Navigate to student detail page with section support
@@ -481,11 +426,14 @@ const Record = () => {
     }
   };
 
+  // Get attendance statistics for display
+  const stats = getAttendanceStats();
+
   return (
     <div className={`record_container ${theme}`}>
       <Navbar theme={theme} toggleTheme={toggleTheme} />
 
-      {(loading || loadingCourses) && <Loader />}
+      {(attendanceLoading || loadingCourses) && <Loader />}
 
       <AlertModal
         isOpen={isModalOpen}
@@ -631,9 +579,9 @@ const Record = () => {
 
           <button
             className="record_btn-fetch"
-            onClick={fetchAttendanceSummary}
+            onClick={handleFetchAttendanceSummary}
             disabled={
-              loading || 
+              attendanceLoading || 
               loadingCourses ||
               loadingSpecializations ||
               !course || 
@@ -644,7 +592,7 @@ const Record = () => {
               (hasSpecializations && !specialization)
             }
           >
-            {loading ? "Loading..." : "Get Students"}
+            {attendanceLoading ? "Loading..." : "Get Students"}
           </button>
         </div>
 
@@ -700,12 +648,10 @@ const Record = () => {
                     record.classesAttended,
                     record.totalClasses
                   );
-                  const status =
-                    percentage >= 50
-                      ? "Good"
-                      : percentage >= 30
-                      ? "Warning"
-                      : "Critical";
+                  const status = getAttendanceStatus(
+                    record.classesAttended,
+                    record.totalClasses
+                  );
 
                   return (
                     <tr

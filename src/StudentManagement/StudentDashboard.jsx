@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { PlusCircle, Search, Filter, Info, X, Plus } from "lucide-react";
+import { PlusCircle, Search, Filter } from "lucide-react";
 import "./StudentDashboard.css";
 import Navbar from "../Navbar/Navbar";
 import StudentCard from "./StudentCard";
+import AddStudentForm from "./AddStudentForm";
 import axios from "axios"; 
 import Loader from "../Loader/Loader";
 import AlertModal from "../AlertModal/AlertModal";
+import { useAttendance } from "../hooks/useAttendance";
+import { useSpecializations } from "../hooks/useSpecializations";
 
 const StudentDashboard = () => {
   const [course, setCourse] = useState("");
@@ -23,59 +26,19 @@ const StudentDashboard = () => {
   const [availableSemesters, setAvailableSemesters] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newStudent, setNewStudent] = useState({
-    rollNumber: "",
-    fullName: "",
-    email: "",
-    phoneNumber: "",
-    section: "",
-    specializations: []
-  });
   const [availableSectionOptions, setAvailableSectionOptions] = useState([]);
 
   const token = localStorage.getItem("token");
 
-  // Course configuration with years
-  const courseConfig = {
-    "MTECH(IT)": { years: 5, displayName: "MTech(IT)5Years" },
-    MCA: { years: 5, displayName: "MCA(5Years)" },
-    "MTECH(CS)": { years: 5, displayName: "MTech(CS)5Years" },
-    "MBA(MS)-5yrs": { years: 5, displayName: "MBA(MS)5Years" },
-    "MBA(MS)-2Yrs": { years: 2, displayName: "MBA(MS)2Years" },
-    "MBA(ESHIP)": { years: 2, displayName: "MBA(E-Ship)" },
-    "MBA(APR)": { years: 2, displayName: "MBA(APR)" },
-    "MBA(TM)": { years: 5, displayName: "MBA(T)5Years" },
-    BCOM: { years: 4, displayName: "BCom(Hons)3-4Years" },
-  };
-
-  // Specialization options for MBA(MS) courses
-  const mbaSpecializationOptions = [
-    { value: "Core", label: "Core" },
-    { value: "FA", label: "FA" },
-    { value: "BA", label: "BA" },
-    { value: "FB", label: "FB" },
-    { value: "HA", label: "HA" },
-    { value: "MA", label: "MA" }
-  ];
-
-  // Special specialization options for MBA(MS) 2yrs semester 1
-  const mbaSem1SpecializationOptions = [
-    { value: "Core", label: "Core" },
-    { value: "Accounting-Elective", label: "Accounting-Elective" },
-    { value: "QT-Elective", label: "QT-Elective" }
-  ];
-
-  // Specialization options for BCom courses
-  const bcomSpecializationOptions = [
-    { value: "Core", label: "Core" },
-    { value: "Elective-MktMgmt", label: "Marketing Management" },
-    { value: "Elective-HumanValues", label: "Human Values" },
-    { value: "Elective-IFS", label: "Indian Financial System" },
-    { value: "Elective-BankingInsurance", label: "Banking and Insurance" },
-    { value: "Elective-CorporateRV", label: "Corporate Restructuring and Valuation" },
-    { value: "Elective-BusinessAnalytics", label: "Business Analytics" },
-    { value: "Project", label: "Project" }
-  ];
+  // Custom hooks
+  const { courseConfig, loadingCourses } = useAttendance();
+  const {
+    availableSpecializations,
+    hasSpecializations,
+    loadingSpecializations,
+    fetchSpecializations,
+    resetSpecializations
+  } = useSpecializations();
 
   // Section options - default
   const sectionOptions = [
@@ -90,29 +53,6 @@ const StudentDashboard = () => {
     { value: "C", label: "C" }
   ];
 
-  // Check if current course requires specialization
-  const requiresSpecialization = (courseKey, semester) => {
-    if (courseKey === "MBA(MS)-2Yrs") return true;
-    if (courseKey === "MBA(MS)-5yrs" && parseInt(semester) >= 7) return true;
-    if (courseKey === "BCOM") return true;
-    return false;
-  };
-
-  // Get specialization options based on course and semester
-  const getSpecializationOptions = (courseKey, semesterNum) => {
-    if (courseKey === "BCOM") {
-      return bcomSpecializationOptions;
-    } else if (courseKey === "MBA(MS)-2Yrs") {
-      if (parseInt(semesterNum) === 1) {
-        return mbaSem1SpecializationOptions;
-      }
-      return mbaSpecializationOptions;
-    } else if (courseKey === "MBA(MS)-5yrs") {
-      return mbaSpecializationOptions;
-    }
-    return [];
-  };
-
   // Get section options based on course and semester
   const getSectionOptions = (courseKey, semesterNum) => {
     if (courseKey === "MBA(MS)-2Yrs" && parseInt(semesterNum) === 1) {
@@ -121,12 +61,12 @@ const StudentDashboard = () => {
     return sectionOptions;
   };
 
-  // Function to get available semesters based on course years
+  // Function to get available semesters based on course configuration from API
   const getAvailableSemesters = (courseKey) => {
     if (!courseKey || !courseConfig[courseKey]) return [];
 
-    const years = courseConfig[courseKey].years;
-    const totalSemesters = years * 2;
+    const config = courseConfig[courseKey];
+    const totalSemesters = config.totalSemesters || (config.years * 2);
 
     const availableSems = [];
     for (let i = 1; i <= Math.min(totalSemesters, 10); i++) {
@@ -141,45 +81,23 @@ const StudentDashboard = () => {
     return value;
   };
 
-  // Function to add specialization to new student
-  const addSpecializationToNewStudent = (specializationValue) => {
-    if (specializationValue && !newStudent.specializations.includes(specializationValue)) {
-      setNewStudent(prev => ({
-        ...prev,
-        specializations: [...prev.specializations, specializationValue]
-      }));
-    }
-  };
-
-  // Function to remove specialization from new student
-  const removeSpecializationFromNewStudent = (specializationToRemove) => {
-    setNewStudent(prev => ({
-      ...prev,
-      specializations: prev.specializations.filter(spec => spec !== specializationToRemove)
-    }));
-  };
-
+  // Handle course change
   useEffect(() => {
-    if (course) {
+    if (course && courseConfig[course]) {
       const semesters = getAvailableSemesters(course);
       setAvailableSemesters(semesters);
 
       if (semester && !semesters.includes(parseInt(semester))) {
         setSemester("");
       }
-
-      if (!requiresSpecialization(course, semester)) {
-        setSpecialization("");
-        // Clear specializations from new student form if not required
-        setNewStudent(prev => ({ ...prev, specializations: [] }));
-      }
     } else {
       setAvailableSemesters([]);
       setSpecialization("");
-      setNewStudent(prev => ({ ...prev, specializations: [] }));
+      resetSpecializations();
     }
-  }, [course, semester]);
+  }, [course, courseConfig]);
 
+  // Handle section options based on course and semester
   useEffect(() => {
     if (course && semester) {
       const sectionOpts = getSectionOptions(course, semester);
@@ -192,6 +110,26 @@ const StudentDashboard = () => {
       setAvailableSectionOptions(sectionOptions);
     }
   }, [course, semester]);
+
+  // Fetch specializations when course and semester change
+  useEffect(() => {
+    if (course && semester && courseConfig[course]) {
+      fetchSpecializations(course, semester, courseConfig)
+        .catch(error => {
+          showAlert("Failed to fetch specializations. Please try again.", true);
+        });
+    } else {
+      resetSpecializations();
+      setSpecialization("");
+    }
+  }, [course, semester, courseConfig]);
+
+  // Clear students when relevant filters change
+  useEffect(() => {
+    if (hasSpecializations && !specialization) {
+      setStudents([]);
+    }
+  }, [hasSpecializations, specialization]);
 
   // Filter students based on search term
   useEffect(() => {
@@ -219,6 +157,7 @@ const StudentDashboard = () => {
     setStudents([]);
     setSpecialization("");
     setSection("");
+    resetSpecializations();
   };
 
   const handleSemesterChange = (e) => {
@@ -239,12 +178,12 @@ const StudentDashboard = () => {
   };
 
   const fetchStudents = async () => {
-    if (!course || !semester) {
+    if (!course || !semester || !courseConfig[course]) {
       showAlert("Please select Course and Semester", true);
       return;
     }
 
-    if (requiresSpecialization(course, semester) && !specialization) {
+    if (hasSpecializations && !specialization) {
       showAlert("Please select a Specialization", true);
       return;
     }
@@ -258,7 +197,7 @@ const StudentDashboard = () => {
         section: section || null,
       };
 
-      if (requiresSpecialization(course, semester) && specialization) {
+      if (hasSpecializations && specialization) {
         requestData.specialization = specialization;
       }
 
@@ -296,65 +235,14 @@ const StudentDashboard = () => {
     }
   };
 
-  const handleAddStudent = async () => {
-    if (!newStudent.rollNumber || !newStudent.fullName || !course || !semester) {
-      showAlert("Please fill in all required fields", true);
-      return;
-    }
+  const handleAddStudentSuccess = () => {
+    setShowAddForm(false);
+    // Refresh the student list
+    fetchStudents();
+  };
 
-    // Check if specializations are required and provided
-    if (requiresSpecialization(course, semester) && newStudent.specializations.length === 0) {
-      showAlert("Please add at least one specialization", true);
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const courseId = courseConfig[course]?.displayName;
-      
-      const studentData = {
-        rollNumber: newStudent.rollNumber,
-        fullName: newStudent.fullName,
-        courseName: courseId,
-        semId: parseInt(semester),
-        email: convertEmptyToNull(newStudent.email),
-        phoneNumber: convertEmptyToNull(newStudent.phoneNumber),
-        section: convertEmptyToNull(newStudent.section || section),
-        specializations: newStudent.specializations.length > 0 ? newStudent.specializations : null
-      };
-
-      console.log("Student data being sent:", studentData); // For debugging
-
-      await axios.post(
-        `${process.env.REACT_APP_BACKEND_URL}/student/create`,
-        studentData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      showAlert("Student added successfully!", false);
-      setShowAddForm(false);
-      setNewStudent({
-        rollNumber: "",
-        fullName: "",
-        email: "",
-        phoneNumber: "",
-        section: "",
-        specializations: []
-      });
-      
-      // Refresh the student list
-      fetchStudents();
-    } catch (error) {
-      console.error("Error adding student:", error);
-      showAlert(error.response?.data?.message || "Failed to add student. Please try again.", true);
-    } finally {
-      setLoading(false);
-    }
+  const handleAddStudentCancel = () => {
+    setShowAddForm(false);
   };
 
   const handleEditStudent = async (studentId, editedData) => {
@@ -438,7 +326,7 @@ const StudentDashboard = () => {
     <div className={`studentdashboard_container ${theme}`}>
       <Navbar theme={theme} toggleTheme={toggleTheme} />
 
-      {loading && <Loader />}
+      {(loading || loadingCourses) && <Loader />}
 
       <AlertModal
         isOpen={isModalOpen}
@@ -461,8 +349,11 @@ const StudentDashboard = () => {
               value={course}
               onChange={handleCourseChange}
               className="studentdashboard_form_select"
+              disabled={loadingCourses}
             >
-              <option value="">Select Course</option>
+              <option value="">
+                {loadingCourses ? "Loading courses..." : "Select Course"}
+              </option>
               {Object.entries(courseConfig).map(([key]) => (
                 <option key={key} value={key}>
                   {key}
@@ -478,7 +369,7 @@ const StudentDashboard = () => {
               value={semester}
               onChange={handleSemesterChange}
               className="studentdashboard_form_select"
-              disabled={!course}
+              disabled={!course || loadingCourses}
             >
               <option value="">Select Semester</option>
               {availableSemesters.map((sem) => (
@@ -489,7 +380,7 @@ const StudentDashboard = () => {
             </select>
           </div>
 
-          {requiresSpecialization(course, semester) && (
+          {hasSpecializations && (
             <div className="studentdashboard_form_group">
               <label htmlFor="specialization">Specialization:</label>
               <select
@@ -497,12 +388,14 @@ const StudentDashboard = () => {
                 value={specialization}
                 onChange={handleSpecializationChange}
                 className="studentdashboard_form_select"
-                disabled={!course || !semester}
+                disabled={!course || !semester || loadingSpecializations}
               >
-                <option value="">Select Specialization</option>
-                {getSpecializationOptions(course, semester).map((spec) => (
-                  <option key={spec.value} value={spec.value}>
-                    {spec.label}
+                <option value="">
+                  {loadingSpecializations ? "Loading specializations..." : "Select Specialization"}
+                </option>
+                {availableSpecializations.map((spec) => (
+                  <option key={spec} value={spec}>
+                    {spec}
                   </option>
                 ))}
               </select>
@@ -532,9 +425,12 @@ const StudentDashboard = () => {
               onClick={fetchStudents}
               disabled={
                 loading || 
+                loadingCourses ||
+                loadingSpecializations ||
                 !course || 
                 !semester || 
-                (requiresSpecialization(course, semester) && !specialization)
+                !courseConfig[course] ||
+                (hasSpecializations && !specialization)
               }
             >
               <Filter className="studentdashboard_icon" />
@@ -568,223 +464,19 @@ const StudentDashboard = () => {
 
         {/* Add Student Form */}
         {showAddForm && (
-          <div className="studentdashboard_add_form">
-            <h3>Add New Student</h3>
-            
-            {/* Course Information Display */}
-            {course && semester && (
-              <div className="studentdashboard_course_info" style={{
-                backgroundColor: theme === 'dark' ? '#2a2a2a' : '#f0f8ff',
-                border: '1px solid #007bff',
-                borderRadius: '8px',
-                padding: '16px',
-                marginBottom: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '10px'
-              }}>
-                <Info className="studentdashboard_icon" style={{ color: '#007bff' }} />
-                <div>
-                  <strong>Student will be added to:</strong>
-                  <div style={{ marginTop: '8px', fontSize: '14px' }}>
-                    <span style={{ marginRight: '20px' }}>
-                      <strong>Course:</strong> {course} ({courseConfig[course]?.displayName})
-                    </span>
-                    <span style={{ marginRight: '20px' }}>
-                      <strong>Semester:</strong> {semester}
-                    </span>
-                    {section && (
-                      <span style={{ marginRight: '20px' }}>
-                        <strong>Section:</strong> {section}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="studentdashboard_form_grid">
-              <div className="studentdashboard_form_group">
-                <label>Roll Number (Required):</label>
-                <input
-                  type="text"
-                  value={newStudent.rollNumber}
-                  onChange={(e) => setNewStudent({...newStudent, rollNumber: e.target.value})}
-                  placeholder="e.g., IT-2K21-36"
-                  className="studentdashboard_form_input"
-                />
-              </div>
-              <div className="studentdashboard_form_group">
-                <label>Full Name (Required):</label>
-                <input
-                  type="text"
-                  value={newStudent.fullName}
-                  onChange={(e) => setNewStudent({...newStudent, fullName: e.target.value})}
-                  placeholder="Enter full name"
-                  className="studentdashboard_form_input"
-                />
-              </div>
-              <div className="studentdashboard_form_group">
-                <label>Email:</label>
-                <input
-                  type="email"
-                  value={newStudent.email}
-                  onChange={(e) => setNewStudent({...newStudent, email: e.target.value})}
-                  placeholder="Enter email"
-                  className="studentdashboard_form_input"
-                />
-              </div>
-              <div className="studentdashboard_form_group">
-                <label>Phone Number:</label>
-                <input
-                  type="tel"
-                  value={newStudent.phoneNumber}
-                  onChange={(e) => setNewStudent({...newStudent, phoneNumber: e.target.value})}
-                  placeholder="Enter phone number"
-                  className="studentdashboard_form_input"
-                />
-              </div>
-              <div className="studentdashboard_form_group">
-                <label>Section:</label>
-                <select
-                  value={newStudent.section}
-                  onChange={(e) => setNewStudent({...newStudent, section: e.target.value})}
-                  className="studentdashboard_form_select"
-                >
-                  <option value="">Select Section (Optional)</option>
-                  {availableSectionOptions.map((sec) => (
-                    <option key={sec.value} value={sec.value}>
-                      {sec.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Multiple Specializations Section */}
-            {requiresSpecialization(course, semester) && (
-              <div className="studentdashboard_form_group_Check" style={{ marginTop: '20px' }}>
-                <label>Specializations (Required):</label>
-                
-                {/* Add Specialization Dropdown */}
-                <div style={{ 
-                  display: 'flex', 
-                  gap: '10px', 
-                  alignItems: 'center',
-                  marginBottom: '15px'
-                }}>
-                  <select
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        addSpecializationToNewStudent(e.target.value);
-                        e.target.value = ""; // Reset dropdown
-                      }
-                    }}
-                    className="studentdashboard_form_select"
-                    style={{ flex: 1 }}
-                  >
-                    <option value="">Select Specialization to Add</option>
-                    {getSpecializationOptions(course, semester)
-                      .filter(spec => !newStudent.specializations.includes(spec.value))
-                      .map((spec) => (
-                        <option key={spec.value} value={spec.value}>
-                          {spec.label}
-                        </option>
-                      ))}
-                  </select>
-                  <Plus 
-                    className="studentdashboard_icon" 
-                    style={{ 
-                      color: '#007bff',
-                      cursor: 'pointer',
-                      minWidth: '20px'
-                    }} 
-                  />
-                </div>
-
-                {/* Display Selected Specializations */}
-                {newStudent.specializations.length > 0 && (
-                  <div style={{
-                    margin: '10px 0px'
-                  }}>
-                    <h4 style={{ marginBottom: '10px', fontSize: '16px' }}>
-                      Selected Specializations ({newStudent.specializations.length}):
-                    </h4>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                      {newStudent.specializations.map((spec, index) => {
-                        const specOption = getSpecializationOptions(course, semester).find(s => s.value === spec);
-                        return (
-                          <div
-                            key={index}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              backgroundColor: '#007bff',
-                              color: 'white',
-                              padding: '6px 12px',
-                              borderRadius: '20px',
-                              fontSize: '14px',
-                              gap: '8px'
-                            }}
-                          >
-                            <span>{specOption?.label || spec}</span>
-                            <X
-                              size={16}
-                              style={{ cursor: 'pointer' }}
-                              onClick={() => removeSpecializationFromNewStudent(spec)}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-                
-                {newStudent.specializations.length === 0 && (
-                  <p style={{ 
-                    color: '#666', 
-                    fontSize: '14px',
-                    fontStyle: 'italic',
-                    marginTop: '10px'
-                  }}>
-                    No specializations selected. Please add at least one specialization.
-                  </p>
-                )}
-              </div>
-            )}
-
-            <div className="studentdashboard_form_actions">
-              <button
-                onClick={handleAddStudent}
-                className="studentdashboard_btn_save"
-                disabled={
-                  !newStudent.rollNumber || 
-                  !newStudent.fullName || 
-                  !course || 
-                  !semester ||
-                  (requiresSpecialization(course, semester) && newStudent.specializations.length === 0)
-                }
-              >
-                Add Student
-              </button>
-              <button
-                onClick={() => {
-                  setShowAddForm(false);
-                  setNewStudent({
-                    rollNumber: "",
-                    fullName: "",
-                    email: "",
-                    phoneNumber: "",
-                    section: "",
-                    specializations: []
-                  });
-                }}
-                className="studentdashboard_btn_cancel"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
+          <AddStudentForm
+            course={course}
+            semester={semester}
+            section={section}
+            courseConfig={courseConfig}
+            hasSpecializations={hasSpecializations}
+            availableSpecializations={availableSpecializations}
+            availableSectionOptions={availableSectionOptions}
+            theme={theme}
+            onSuccess={handleAddStudentSuccess}
+            onCancel={handleAddStudentCancel}
+            showAlert={showAlert}
+          />
         )}
 
         {/* Students Grid */}
@@ -793,7 +485,7 @@ const StudentDashboard = () => {
             <div className="studentdashboard_students_info">
               <h3>
                 Students ({filteredStudents.length})
-                {requiresSpecialization(course, semester) && specialization && (
+                {hasSpecializations && specialization && (
                   <span> - Specialization: {specialization}</span>
                 )}
                 {section && (
@@ -816,7 +508,7 @@ const StudentDashboard = () => {
           </div>
         )}
 
-        {students.length === 0 && !loading && course && semester && (
+        {students.length === 0 && !loading && course && semester && !loadingCourses && (
           <div className="studentdashboard_empty_state">
             <p>No students found. Try different filters or add a new student.</p>
           </div>

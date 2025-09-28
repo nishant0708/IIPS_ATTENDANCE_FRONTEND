@@ -99,7 +99,6 @@ const fetchAllSubjects = async () => {
     setAllSubjects(subjectOptions);
     
     if (subjectOptions.length === 0) {
-      console.warn("No subjects found in API response");
       showAlert("No subjects found in the system", false);
     }
     
