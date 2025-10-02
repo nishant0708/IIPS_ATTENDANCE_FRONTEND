@@ -10,7 +10,8 @@ import ExcelExportButton from "./ExcelExportButton";
 import { useSubjects } from "../hooks/useSubjects";
 import { useSpecializations } from "../hooks/useSpecializations";
 import { useAttendance } from "../hooks/useAttendance";
-import { useAttendanceSummary } from "../hooks/useAttendanceSummary"; // Import the new hook
+import { useAttendanceSummary } from "../hooks/useAttendanceSummary";
+import { useSemesters } from "../hooks/useSemesters"; // Import the new hook
 
 const Record = () => {
   const navigate = useNavigate();
@@ -28,13 +29,18 @@ const Record = () => {
   const filtersLoaded = useRef(false);
   const shouldFetchData = useRef(false);
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
-  const [availableSemesters, setAvailableSemesters] = useState([]);
   const [availableSectionOptions, setAvailableSectionOptions] = useState([]);
   const [isDateFilterModalOpen, setIsDateFilterModalOpen] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [filtersReadyForFetch, setFiltersReadyForFetch] = useState(false); // New state to trigger fetch
+  
+  // Track what's been fetched to avoid duplicate API calls
+  const fetchedSemesters = useRef(null);
+  const fetchedSpecializations = useRef(null);
+  const fetchedSubjects = useRef(null);
 
-  // Custom hooks - using same hooks as Dashboard
+  // Custom hooks
   const { courseConfig, loadingCourses } = useAttendance();
   const { 
     subjects, 
@@ -49,8 +55,14 @@ const Record = () => {
     fetchSpecializations,
     resetSpecializations
   } = useSpecializations();
+  const { 
+    availableSemesters, 
+    loadingSemesters, 
+    fetchSemesters, 
+    resetSemesters 
+  } = useSemesters(); // Use the new hook
   
-  // Use the new attendance summary hook
+  // Use the attendance summary hook
   const {
     attendanceSummary,
     loading: attendanceLoading,
@@ -84,20 +96,6 @@ const Record = () => {
     return sectionOptions;
   };
 
-  // Function to get available semesters based on course configuration from API
-  const getAvailableSemesters = (courseKey) => {
-    if (!courseKey || !courseConfig[courseKey]) return [];
-
-    const config = courseConfig[courseKey];
-    const totalSemesters = config.totalSemesters || (config.years * 2);
-
-    const availableSems = [];
-    for (let i = 1; i <= Math.min(totalSemesters, 10); i++) {
-      availableSems.push(i);
-    }
-    return availableSems;
-  };
-
   // Generate academic year options
   const generateAcademicYears = () => {
     const currentYear = new Date().getFullYear();
@@ -116,25 +114,40 @@ const Record = () => {
     setIsModalOpen(true);
   };
 
-  // Handle course change - same logic as Dashboard
+  // Handle course change - updated to use hook with memoization
   useEffect(() => {
     if (course && courseConfig[course]) {
-      const semesters = getAvailableSemesters(course);
-      setAvailableSemesters(semesters);
-
-      if (semester && !semesters.includes(parseInt(semester))) {
+      // Check if we already fetched semesters for this course
+      if (fetchedSemesters.current !== course) {
+        fetchSemesters(course, courseConfig)
+          .then(semesters => {
+            fetchedSemesters.current = course;
+            // Only reset semester if it's not in the accessible list AND filters have been loaded
+            if (semester && !semesters.includes(parseInt(semester)) && filtersLoaded.current) {
+              setSemester("");
+              if (filtersLoaded.current) {
+                resetSubjects();
+                setSubject("");
+              }
+            }
+          })
+          .catch(error => {
+            showAlert("Failed to fetch semesters. Please try again.", true);
+          });
+      }
+    } else {
+      resetSemesters();
+      fetchedSemesters.current = null;
+      // Only reset if filters were already loaded (not initial mount)
+      if (filtersLoaded.current) {
         setSemester("");
         resetSubjects();
         setSubject("");
+        setSpecialization("");
+        resetSpecializations();
       }
-    } else {
-      setAvailableSemesters([]);
-      resetSubjects();
-      setSubject("");
-      setSpecialization("");
-      resetSpecializations();
     }
-  }, [course, courseConfig]);
+  }, [course, courseConfig, fetchSemesters]);
 
   // Handle section options based on course and semester - same as Dashboard
   useEffect(() => {
@@ -150,55 +163,82 @@ const Record = () => {
     }
   }, [course, semester]);
 
-  // Fetch specializations when course and semester change - same as Dashboard
+  // Fetch specializations when course and semester change - with memoization
   useEffect(() => {
     if (course && semester && courseConfig[course]) {
-      fetchSpecializations(course, semester, courseConfig)
-        .catch(error => {
-          showAlert("Failed to fetch specializations. Please try again.", true);
-        });
+      const specializationKey = `${course}-${semester}`;
+      
+      // Check if we already fetched specializations for this course/semester combo
+      if (fetchedSpecializations.current !== specializationKey) {
+        fetchSpecializations(course, semester, courseConfig)
+          .then(() => {
+            fetchedSpecializations.current = specializationKey;
+          })
+          .catch(error => {
+            showAlert("Failed to fetch specializations. Please try again.", true);
+          });
+      }
     } else {
       resetSpecializations();
+      fetchedSpecializations.current = null;
       setSpecialization("");
     }
   }, [course, semester, courseConfig]);
 
-  // Fetch subjects when course, semester, or specialization change - same as Dashboard
+  // Fetch subjects when course, semester, or specialization change - with memoization
   useEffect(() => {
     if (course && semester && courseConfig[course]) {
+      const subjectKey = hasSpecializations 
+        ? `${course}-${semester}-${specialization}` 
+        : `${course}-${semester}`;
+      
       if (hasSpecializations) {
         if (specialization) {
+          // Only fetch if we haven't fetched this combination before
+          if (fetchedSubjects.current !== subjectKey) {
+            fetchSubjects(course, semester, specialization, hasSpecializations, courseConfig)
+              .then(subjects => {
+                fetchedSubjects.current = subjectKey;
+                if (subjects.length === 0 && filtersLoaded.current) {
+                  showAlert("No subjects found for the selected course and semester", true);
+                }
+              })
+              .catch(error => {
+                showAlert("Failed to fetch subjects. Please try again.", true);
+              });
+          }
+        } else {
+          // Only reset if not restoring filters
+          if (filtersLoaded.current) {
+            resetSubjects();
+            setSubject("");
+            clearAttendanceSummary();
+            fetchedSubjects.current = null;
+          }
+        }
+      } else {
+        // Only fetch if we haven't fetched this combination before
+        if (fetchedSubjects.current !== subjectKey) {
           fetchSubjects(course, semester, specialization, hasSpecializations, courseConfig)
             .then(subjects => {
-              if (subjects.length === 0) {
+              fetchedSubjects.current = subjectKey;
+              if (subjects.length === 0 && filtersLoaded.current) {
                 showAlert("No subjects found for the selected course and semester", true);
               }
             })
             .catch(error => {
               showAlert("Failed to fetch subjects. Please try again.", true);
             });
-        } else {
-          resetSubjects();
-          setSubject("");
-          clearAttendanceSummary(); // Use hook function
         }
-      } else {
-        fetchSubjects(course, semester, specialization, hasSpecializations, courseConfig)
-          .then(subjects => {
-            if (subjects.length === 0) {
-              showAlert("No subjects found for the selected course and semester", true);
-            }
-          })
-          .catch(error => {
-            showAlert("Failed to fetch subjects. Please try again.", true);
-          });
       }
-      
-      clearAttendanceSummary(); // Use hook function
     } else {
-      resetSubjects();
-      setSubject("");
-      clearAttendanceSummary(); // Use hook function
+      // Only reset if not during initial load
+      if (filtersLoaded.current) {
+        resetSubjects();
+        setSubject("");
+        clearAttendanceSummary();
+      }
+      fetchedSubjects.current = null;
     }
   }, [course, semester, specialization, hasSpecializations, courseConfig]);
 
@@ -209,6 +249,12 @@ const Record = () => {
 
     if (savedFilters.course && !filtersLoaded.current) {
       console.log("Restoring saved filters");
+      
+      // Reset fetch tracking to allow fresh fetches for restored filters
+      fetchedSemesters.current = null;
+      fetchedSpecializations.current = null;
+      fetchedSubjects.current = null;
+      
       setCourse(savedFilters.course);
       
       if (savedFilters.semester) {
@@ -237,39 +283,64 @@ const Record = () => {
         setEndDate(savedFilters.endDate);
       }
 
-      filtersLoaded.current = true;
-
       // Set flag to fetch data if coming from detail page
       if (location.state?.returnFromDetail) {
         console.log("Returning from detail page, will fetch data");
         shouldFetchData.current = true;
       }
+      
+      // Use setTimeout to mark filters as loaded after React finishes rendering
+      // and all API calls (semesters, specializations, subjects) complete
+      setTimeout(() => {
+        filtersLoaded.current = true;
+        console.log("Filters marked as loaded");
+        // Trigger the fetch check
+        if (shouldFetchData.current) {
+          setFiltersReadyForFetch(true);
+        }
+      }, 500);
+    } else if (!savedFilters.course) {
+      // If no saved filters, mark as loaded immediately
+      filtersLoaded.current = true;
     }
   }, [location.state]);
 
-  // Auto-fetch effect
+  // Auto-fetch effect - triggers when filters are ready
   useEffect(() => {
+    if (!filtersReadyForFetch) return;
+
     const allFiltersSelected = course && semester && subject && academicYear &&
       (!hasSpecializations || specialization);
 
-    console.log("Auto-fetch check:", { 
+    // Check if subjects array has loaded and includes the selected subject
+    const subjectIsReady = subjects.length > 0 && 
+      subjects.some(s => (s.Sub_Code || s._id) === subject);
+
+    // Also check that we're not currently loading subjects
+    const notLoadingSubjects = !loadingSubjects;
+
+    console.log("Auto-fetch triggered by filtersReadyForFetch:", { 
       allFiltersSelected, 
-      shouldFetch: shouldFetchData.current,
+      subjectIsReady,
+      notLoadingSubjects,
       course, 
       semester, 
       subject, 
       academicYear, 
       specialization,
       section,
-      hasSpecializations
+      hasSpecializations,
+      subjectsCount: subjects.length
     });
 
-    if (allFiltersSelected && shouldFetchData.current) {
-      console.log("Auto-fetching attendance data");
+    if (allFiltersSelected && subjectIsReady && notLoadingSubjects) {
+      console.log("Executing auto-fetch now!");
       handleFetchAttendanceSummary();
+      // Reset the flag
+      setFiltersReadyForFetch(false);
       shouldFetchData.current = false;
     }
-  }, [course, semester, subject, academicYear, specialization, section, subjects]);
+  }, [filtersReadyForFetch, subjects, loadingSubjects]);
 
   // Save filters to localStorage whenever they change
   useEffect(() => {
@@ -290,33 +361,54 @@ const Record = () => {
   }, [course, semester, subject, academicYear, specialization, section, startDate, endDate]);
 
   const handleCourseChange = (e) => {
-    setCourse(e.target.value);
+    const newCourse = e.target.value;
+    setCourse(newCourse);
     setSemester("");
     setSpecialization("");
     setSection("");
-    clearAttendanceSummary();
-    resetSubjects();
     setSubject("");
-    resetSpecializations();
+    
+    // Clear the fetch tracking when user manually changes course
+    fetchedSemesters.current = null;
+    fetchedSpecializations.current = null;
+    fetchedSubjects.current = null;
+    
+    // Only clear and reset if user is manually changing
+    if (filtersLoaded.current) {
+      clearAttendanceSummary();
+      resetSubjects();
+      resetSpecializations();
+    }
   };
 
   const handleSemesterChange = (e) => {
     setSemester(e.target.value);
-    clearAttendanceSummary();
     setSubject("");
     setSpecialization("");
     setSection("");
+    
+    // Only clear if user is manually changing (not during filter restoration)
+    if (filtersLoaded.current) {
+      clearAttendanceSummary();
+    }
   };
 
   const handleSpecializationChange = (e) => {
     setSpecialization(e.target.value);
-    clearAttendanceSummary();
     setSubject("");
+    
+    // Only clear if user is manually changing (not during filter restoration)
+    if (filtersLoaded.current) {
+      clearAttendanceSummary();
+    }
   };
 
   const handleSectionChange = (e) => {
     setSection(e.target.value);
-    clearAttendanceSummary();
+    // Only clear if user is manually changing (not during filter restoration)
+    if (filtersLoaded.current) {
+      clearAttendanceSummary();
+    }
   };
 
   const handleSubjectChange = (e) => {
@@ -340,7 +432,6 @@ const Record = () => {
       endDate,
       subjects,
       hasSpecializations,
-     // onSuccess: (message) => showAlert(message, false),
       onError: showAlert
     });
 
@@ -372,7 +463,6 @@ const Record = () => {
         section,
         subjects,
         hasSpecializations,
-      //  onSuccess: (message) => showAlert(message, false),
         onError: showAlert
       }, newStartDate, newEndDate);
     }
@@ -433,7 +523,7 @@ const Record = () => {
     <div className={`record_container ${theme}`}>
       <Navbar theme={theme} toggleTheme={toggleTheme} />
 
-      {(attendanceLoading || loadingCourses) && <Loader />}
+      {(attendanceLoading || loadingCourses || loadingSemesters) && <Loader />}
 
       <AlertModal
         isOpen={isModalOpen}
@@ -487,9 +577,11 @@ const Record = () => {
               value={semester}
               onChange={handleSemesterChange}
               className="record_filter-select"
-              disabled={!course || loadingCourses}
+              disabled={!course || loadingCourses || loadingSemesters}
             >
-              <option value="">Select Semester</option>
+              <option value="">
+                {loadingSemesters ? "Loading semesters..." : "Select Semester"}
+              </option>
               {availableSemesters.map((sem) => (
                 <option key={sem} value={sem}>
                   {sem}
@@ -583,6 +675,7 @@ const Record = () => {
             disabled={
               attendanceLoading || 
               loadingCourses ||
+              loadingSemesters ||
               loadingSpecializations ||
               !course || 
               !semester || 

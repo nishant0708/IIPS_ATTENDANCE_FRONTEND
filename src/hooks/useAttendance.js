@@ -5,12 +5,16 @@ export const useAttendance = () => {
   const [courseConfig, setCourseConfig] = useState({});
   const [loadingCourses, setLoadingCourses] = useState(false);
   const token = localStorage.getItem("token");
+  const teacherId = localStorage.getItem("teacherId");  
 
   const fetchCourses = async () => {
     setLoadingCourses(true);
     try {
-      const response = await axios.get(
+      const response = await axios.post(
         `${process.env.REACT_APP_BACKEND_URL}/attendance`,
+         {
+          teacherId: teacherId
+        },
         {
           headers: { Authorization: `Bearer ${token}` },
         }

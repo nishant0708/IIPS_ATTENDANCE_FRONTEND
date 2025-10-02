@@ -7,6 +7,7 @@ import AlertModal from "../AlertModal/AlertModal";
 import { useSubjects } from "../hooks/useSubjects";
 import { useSpecializations } from "../hooks/useSpecializations";
 import { useAttendance } from "../hooks/useAttendance";
+import { useSemesters } from "../hooks/useSemesters";
 
 const Dashboard = () => {
   const [course, setCourse] = useState("");
@@ -21,38 +22,34 @@ const Dashboard = () => {
   const [modalMessage, setModalMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
-  const [availableSemesters, setAvailableSemesters] = useState([]);
   const [availableSectionOptions, setAvailableSectionOptions] = useState([]);
-  
+
   const token = localStorage.getItem("token");
+  const teacherId = localStorage.getItem("teacherId");
 
   // Custom hooks
   const { courseConfig, loadingCourses } = useAttendance();
-  const { 
-    subjects, 
-    loadingSubjects, 
-    fetchSubjects, 
-    resetSubjects 
-  } = useSubjects();
+  const { subjects, loadingSubjects, fetchSubjects, resetSubjects } =
+    useSubjects();
   const {
     availableSpecializations,
     hasSpecializations,
     loadingSpecializations,
     fetchSpecializations,
-    resetSpecializations
+    resetSpecializations,
   } = useSpecializations();
 
   // Section options - default
   const sectionOptions = [
     { value: "A", label: "A" },
-    { value: "B", label: "B" }
+    { value: "B", label: "B" },
   ];
 
   // Special section options for MBA(MS) 2yrs semester 1
   const mbaSem1SectionOptions = [
     { value: "A", label: "A" },
     { value: "B", label: "B" },
-    { value: "C", label: "C" }
+    { value: "C", label: "C" },
   ];
 
   // Get section options based on course and semester
@@ -87,18 +84,12 @@ const Dashboard = () => {
   const [attendanceDate, setAttendanceDate] = useState(getCurrentDateIST());
 
   // Function to get available semesters based on course configuration from API
-  const getAvailableSemesters = (courseKey) => {
-    if (!courseKey || !courseConfig[courseKey]) return [];
-
-    const config = courseConfig[courseKey];
-    const totalSemesters = config.totalSemesters || (config.years * 2);
-
-    const availableSems = [];
-    for (let i = 1; i <= Math.min(totalSemesters, 10); i++) {
-      availableSems.push(i);
-    }
-    return availableSems;
-  };
+  const {
+    availableSemesters,
+    loadingSemesters,
+    fetchSemesters,
+    resetSemesters,
+  } = useSemesters();
 
   const showAlert = (msg, error = false) => {
     setModalMessage(msg);
@@ -106,33 +97,37 @@ const Dashboard = () => {
     setIsModalOpen(true);
   };
 
-  // Handle course change
+  //  useEffect for course changes:
   useEffect(() => {
     if (course && courseConfig[course]) {
-      const semesters = getAvailableSemesters(course);
-      setAvailableSemesters(semesters);
-
-      if (semester && !semesters.includes(parseInt(semester))) {
-        setSemester("");
-        resetSubjects();
-        setSubject("");
-      }
+      fetchSemesters(course, courseConfig)
+        .then((semesters) => {
+          if (semester && !semesters.includes(parseInt(semester))) {
+            setSemester("");
+            resetSubjects();
+            setSubject("");
+          }
+        })
+        .catch((error) => {
+          showAlert("Failed to fetch semesters. Please try again.", true);
+        });
     } else {
-      setAvailableSemesters([]);
+      resetSemesters();
+      setSemester("");
       resetSubjects();
       setSubject("");
       setSpecialization("");
       resetSpecializations();
     }
-  }, [course, courseConfig]);
+  }, [course, courseConfig, fetchSemesters]);
 
   // Handle section options based on course and semester
   useEffect(() => {
     if (course && semester) {
       const sectionOpts = getSectionOptions(course, semester);
       setAvailableSectionOptions(sectionOpts);
-      
-      if (section && !sectionOpts.find(opt => opt.value === section)) {
+
+      if (section && !sectionOpts.find((opt) => opt.value === section)) {
         setSection("");
       }
     } else {
@@ -143,10 +138,9 @@ const Dashboard = () => {
   // Fetch specializations when course and semester change
   useEffect(() => {
     if (course && semester && courseConfig[course]) {
-      fetchSpecializations(course, semester, courseConfig)
-        .catch(error => {
-          showAlert("Failed to fetch specializations. Please try again.", true);
-        });
+      fetchSpecializations(course, semester, courseConfig).catch((error) => {
+        showAlert("Failed to fetch specializations. Please try again.", true);
+      });
     } else {
       resetSpecializations();
       setSpecialization("");
@@ -158,13 +152,22 @@ const Dashboard = () => {
     if (course && semester && courseConfig[course]) {
       if (hasSpecializations) {
         if (specialization) {
-          fetchSubjects(course, semester, specialization, hasSpecializations, courseConfig)
-            .then(subjects => {
+          fetchSubjects(
+            course,
+            semester,
+            specialization,
+            hasSpecializations,
+            courseConfig
+          )
+            .then((subjects) => {
               if (subjects.length === 0) {
-                showAlert("No subjects found for the selected course and semester", true);
+                showAlert(
+                  "You Dont have access for Selected Course and Semester",
+                  true
+                );
               }
             })
-            .catch(error => {
+            .catch((error) => {
               showAlert("Failed to fetch subjects. Please try again.", true);
             });
         } else {
@@ -173,17 +176,26 @@ const Dashboard = () => {
           setStudents([]);
         }
       } else {
-        fetchSubjects(course, semester, specialization, hasSpecializations, courseConfig)
-          .then(subjects => {
+        fetchSubjects(
+          course,
+          semester,
+          specialization,
+          hasSpecializations,
+          courseConfig
+        )
+          .then((subjects) => {
             if (subjects.length === 0) {
-              showAlert("No subjects found for the selected course and semester", true);
+              showAlert(
+                "You Dont have access for Selected Course and Semester",
+                true
+              );
             }
           })
-          .catch(error => {
+          .catch((error) => {
             showAlert("Failed to fetch subjects. Please try again.", true);
           });
       }
-      
+
       setStudents([]);
     } else {
       resetSubjects();
@@ -229,12 +241,12 @@ const Dashboard = () => {
     const selectedDate = e.target.value;
     const minDate = getMinDateIST();
     const maxDate = getCurrentDateIST();
-    
+
     if (selectedDate < minDate || selectedDate > maxDate) {
       showAlert("Please select a date within the last 35 days only", true);
       return;
     }
-    
+
     setAttendanceDate(selectedDate);
   };
 
@@ -317,7 +329,7 @@ const Dashboard = () => {
 
     const minDate = getMinDateIST();
     const maxDate = getCurrentDateIST();
-    
+
     if (attendanceDate < minDate || attendanceDate > maxDate) {
       showAlert("Please select a date within the last 35 days only", true);
       return;
@@ -330,6 +342,7 @@ const Dashboard = () => {
         courseName: courseConfig[course]?.displayName,
         semId: semester,
         subjectCode: subject.trim(),
+        teacherId: teacherId,
         date: new Date(attendanceDate).toISOString(),
         section: section || null,
         attendance: Object.entries(attendanceMap).map(
@@ -420,9 +433,11 @@ const Dashboard = () => {
               value={semester}
               onChange={handleSemesterChange}
               className="form-select"
-              disabled={!course || loadingCourses}
+              disabled={!course || loadingCourses || loadingSemesters}
             >
-              <option value="">Select Semester</option>
+              <option value="">
+                {loadingSemesters ? "Loading semesters..." : "Select Semester"}
+              </option>
               {availableSemesters.map((sem) => (
                 <option key={sem} value={sem}>
                   {sem}
@@ -442,7 +457,9 @@ const Dashboard = () => {
                 disabled={!course || !semester || loadingSpecializations}
               >
                 <option value="">
-                  {loadingSpecializations ? "Loading specializations..." : "Select Specialization"}
+                  {loadingSpecializations
+                    ? "Loading specializations..."
+                    : "Select Specialization"}
                 </option>
                 {availableSpecializations.map((spec) => (
                   <option key={spec} value={spec}>
@@ -477,7 +494,13 @@ const Dashboard = () => {
               value={subject}
               onChange={handleSubjectChange}
               className="form-select"
-              disabled={!semester || !course || loadingSubjects || !courseConfig[course] || (hasSpecializations && !specialization)}
+              disabled={
+                !semester ||
+                !course ||
+                loadingSubjects ||
+                !courseConfig[course] ||
+                (hasSpecializations && !specialization)
+              }
             >
               <option value="">
                 {loadingSubjects ? "Loading subjects..." : "Select Subject"}
@@ -510,12 +533,12 @@ const Dashboard = () => {
             className="btn-fetch"
             onClick={fetchStudents}
             disabled={
-              loading || 
+              loading ||
               loadingCourses ||
               loadingSpecializations ||
-              !course || 
-              !semester || 
-              !subject || 
+              !course ||
+              !semester ||
+              !subject ||
               !courseConfig[course] ||
               (hasSpecializations && !specialization)
             }
@@ -528,13 +551,12 @@ const Dashboard = () => {
           <div className="attendance-table-container">
             <div className="attendance-info">
               <h3>
-                Marking attendance for: {subject} - {subjects.find(s => s.Sub_Code === subject)?.Sub_Name}
+                Marking attendance for: {subject} -{" "}
+                {subjects.find((s) => s.Sub_Code === subject)?.Sub_Name}
                 {hasSpecializations && specialization && (
                   <span> (Specialization: {specialization})</span>
                 )}
-                {section && (
-                  <span> (Section: {section})</span>
-                )}
+                {section && <span> (Section: {section})</span>}
               </h3>
               <p>Date: {new Date(attendanceDate).toLocaleDateString()}</p>
             </div>

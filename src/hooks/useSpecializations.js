@@ -6,6 +6,7 @@ export const useSpecializations = () => {
   const [hasSpecializations, setHasSpecializations] = useState(false);
   const [loadingSpecializations, setLoadingSpecializations] = useState(false);
   const token = localStorage.getItem("token");
+   const teacherId = localStorage.getItem("teacherId");
 
   const fetchSpecializations = async (courseName, semesterNum, courseConfig) => {
     if (!courseName || !semesterNum || !courseConfig[courseName]) return;
@@ -17,6 +18,7 @@ export const useSpecializations = () => {
         {
           course: courseConfig[courseName]?.displayName,
           semester: semesterNum,
+          teacherId: teacherId
         },
         {
           headers: { Authorization: `Bearer ${token}` },

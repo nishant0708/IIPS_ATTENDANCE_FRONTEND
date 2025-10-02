@@ -235,13 +235,14 @@ const fetchAttendanceDetails = async () => {
         
         <div className="attendance-records-section">
           <h3>Detailed Attendance Records</h3>
-          
+          <div className='attendance-records-container'>
           {attendanceRecords.length > 0 ? (
             <table className="attendance-records-table">
               <thead>
                 <tr>
                   <th>Date</th>
                   <th>Status</th>
+                  <th>Marked By</th>
                 </tr>
               </thead>
               <tbody>
@@ -253,6 +254,9 @@ const fetchAttendanceDetails = async () => {
                         {record.present ? 'Present' : 'Absent'}
                       </span>
                     </td>
+                     <td>
+                        {record.markedBy}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -262,6 +266,7 @@ const fetchAttendanceDetails = async () => {
               No attendance records found for this student and subject.
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>

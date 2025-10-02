@@ -6,6 +6,7 @@ export const useSubjects = () => {
   const [subjects, setSubjects] = useState([]);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
   const token = localStorage.getItem("token");
+  const teacherId = localStorage.getItem("teacherId");
 
   const fetchSubjects = async (courseName, semesterNum, specialization, hasSpecializations, courseConfig) => {
     if (!courseName || !semesterNum || !courseConfig[courseName]) return [];
@@ -18,6 +19,7 @@ export const useSubjects = () => {
           course: courseConfig[courseName]?.displayName,
           semester: semesterNum,
           specialization: hasSpecializations ? specialization : null,
+          teacherId: teacherId
         },
         {
           headers: { Authorization: `Bearer ${token}` },
