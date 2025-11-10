@@ -187,6 +187,14 @@ const Navbar = ({ theme, toggleTheme }) => {
             >
               Attendance Record
             </p>
+             <p
+              className={`navbar-links ${
+                location.pathname === `/attendance_history` ? "active" : ""
+              }`}
+              onClick={() => navigate(`/attendance_history`)}
+            >
+             Attendance History
+            </p>
           </div>
         )}
 
@@ -224,6 +232,14 @@ const Navbar = ({ theme, toggleTheme }) => {
               >
                 Attendance Record
               </p>
+              <p
+              className={`navbar-links ${
+                location.pathname === `/attendance_history` ? "active" : ""
+              }`}
+              onClick={() => navigate(`/attendance_history`)}
+            >
+             Attendance History
+            </p>
               <p
                     className={`navbar-links ${theme} ${
                     location.pathname === `/TeacherManagement` ? "active" : ""
