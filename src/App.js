@@ -16,6 +16,8 @@ import AdminPage from './Admin/AdminPage';
 import Profile from './profile/profile';
 import StudentDashboard from './StudentManagement/StudentDashboard';
 import TeacherDashboard from './TeacherManagement/TeacherDashboard';
+import TeacherAttendanceDashboard from './UpdateAttendanceDashboard/TeacherAttendanceDashboard';
+import AttendanceUpdateStandalone from './AttendanceUpdateStandalone/AttendanceUpdateStandalone';
 
 
 
@@ -72,6 +74,8 @@ const [Admin, setAdmin] = useState(false);
         <Route path="/attendance_record" element={<Record />} />
         <Route path="/student/:studentId" element={<StudentDetail />} />
         <Route path="/edit_profile" element={<Profile />} />
+        <Route path="/attendance_history" element={<TeacherAttendanceDashboard />} />
+        <Route path="/update_attendance" element={<AttendanceUpdateStandalone/>}/> 
         {Admin && (
           <>
           <Route path="/admin" element={<AdminPage />} />

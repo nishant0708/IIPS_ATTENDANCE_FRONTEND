@@ -1,0 +1,438 @@
+/* Teacher Attendance Dashboard Styles */
+
+.teacher-dashboard-container {
+  min-height: 100vh;
+  padding: 20px;
+  background-color: var(--background-color-light);
+  color: var(--text-color-light);
+}
+
+.teacher-dashboard-container.dark {
+  background-color: var(--background-color-dark);
+  color: var(--text-color-dark);
+}
+.paginate{
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0;
+  margin-top: 20px;
+}
+/* Header Section */
+.teacher-header {
+  margin-bottom: 30px;
+}
+
+.teacher-header h2 {
+  margin-bottom: 10px;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.teacher-info {
+  font-size: 16px;
+  opacity: 0.8;
+}
+
+.teacher-name {
+  font-weight: 600;
+  color: #4CAF50;
+}
+
+.all-access-badge {
+  margin-left: 10px;
+  padding: 4px 12px;
+  background-color: #4CAF50;
+  color: white;
+  font-size: 14px;
+  border-radius: 20px;
+  font-weight: 500;
+  display: inline-block;
+}
+
+/* Cards Grid */
+.attendance-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  margin-top: 20px;
+}
+
+/* Attendance Card */
+.attendance-card {
+  background-color: var(--secondary-background-color-light);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.teacher-dashboard-container.dark .attendance-card {
+  background-color: var(--secondary-background-color-dark);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.attendance-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.teacher-dashboard-container.dark .attendance-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Card Header */
+.card-header {
+  background: linear-gradient(135deg, #4CAF50 0%, #2196F3 100%);
+  padding: 20px;
+  color: white;
+}
+
+.card-header h3 {
+  margin: 0 0 5px 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.card-subject-name {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* Card Body */
+.card-body {
+  padding: 20px;
+}
+
+.card-info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.card-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 12px;
+  color: #4CAF50;
+  flex-shrink: 0;
+}
+
+.card-info-content {
+  flex: 1;
+}
+
+.card-info-label {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.card-info-value {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Attendance Stats */
+.attendance-stats {
+  padding-top: 15px;
+  border-top: 1px solid var(--border-color-light);
+  margin-bottom: 15px;
+}
+
+.teacher-dashboard-container.dark .attendance-stats {
+  border-top: 1px solid var(--border-color-dark);
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.stat-row:last-child {
+  margin-bottom: 0;
+}
+
+.stat-label {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+}
+
+.stat-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+}
+
+.stat-value {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.stat-value.present {
+  color: #4CAF50;
+}
+
+.stat-value.absent {
+  color: #f44336;
+}
+
+/* Update Button */
+.update-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin: 0;
+}
+
+.update-button.active {
+  background-color: #2196F3;
+  color: white;
+}
+
+.update-button.active:hover {
+  background-color: #0b7dda;
+}
+
+.update-button.disabled {
+  background-color: #555555;
+  color: #999999;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.update-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background-color: var(--secondary-background-color-light);
+  border-radius: 12px;
+  margin-top: 20px;
+}
+
+.teacher-dashboard-container.dark .empty-state {
+  background-color: var(--secondary-background-color-dark);
+}
+
+.empty-state-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 20px;
+  opacity: 0.5;
+}
+
+.empty-state h3 {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.empty-state p {
+  opacity: 0.7;
+  font-size: 16px;
+}
+
+/* Loading Spinner */
+.loading-container {
+  text-align: center;
+  padding: 50px;
+}
+
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid #555;
+  border-top: 4px solid #4CAF50;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: var(--background-color-light);
+  border-radius: 12px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.teacher-dashboard-container.dark .modal-content {
+  background-color: var(--background-color-dark);
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #4CAF50 0%, #2196F3 100%);
+  padding: 25px;
+  color: white;
+}
+
+.modal-header h2 {
+  margin: 0 0 5px 0;
+  font-size: 24px;
+}
+
+.modal-header p {
+  margin: 0;
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.modal-body {
+  padding: 25px;
+  overflow-y: auto;
+  max-height: calc(90vh - 200px);
+}
+
+.modal-footer {
+  padding: 20px 25px;
+  background-color: var(--secondary-background-color-light);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid var(--border-color-light);
+}
+
+.teacher-dashboard-container.dark .modal-footer {
+  background-color: var(--secondary-background-color-dark);
+  border-top: 1px solid var(--border-color-dark);
+}
+
+.modal-button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 120px;
+}
+
+.modal-button.cancel {
+  background-color: #555555;
+  color: white;
+}
+
+.modal-button.cancel:hover {
+  background-color: #666666;
+}
+
+.modal-button.save {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.modal-button.save:hover {
+  background-color: #45a049;
+}
+
+.modal-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Error Message */
+.error-message {
+  padding: 12px;
+  margin-bottom: 20px;
+  border-radius: 6px;
+  background-color: #ffebee;
+  color: #c62828;
+  border-left: 4px solid #f44336;
+}
+
+.teacher-dashboard-container.dark .error-message {
+  background-color: #4a2525;
+  color: #ef5350;
+}
+.attendance-section{
+    background-color: var(--secondary-background-color-light);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.teacher-dashboard-container.dark .attendance-section {
+  background-color: var(--secondary-background-color-dark);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .attendance-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-header h2 {
+    font-size: 24px;
+  }
+
+  .modal-content {
+    max-width: 100%;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+  }
+
+  .modal-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .teacher-dashboard-container {
+    padding: 10px;
+  }
+
+  .card-body {
+    padding: 15px;
+  }
+
+  .card-header {
+    padding: 15px;
+  }
+
+  .teacher-header h2 {
+    font-size: 20px;
+  }
+}
