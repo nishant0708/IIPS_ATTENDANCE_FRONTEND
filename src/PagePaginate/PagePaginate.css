@@ -1,0 +1,83 @@
+/* Wrapper to center pagination under cards */
+.paginate {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+/* ReactPaginate container (ul) */
+.pagination-container {
+  display: flex;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Base item (li) */
+.pagination-item {
+  min-width: 32px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  
+  border: 1px solid #cccccc;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: center;
+  user-select: none;
+  background-color: transparent;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+  color: #000000; /* default = light theme text */
+}
+
+/* Prev / Next buttons can be slightly narrower */
+.pagination-prev-next {
+  min-width: 28px;
+}
+
+/* Break (ellipsis) */
+.pagination-break {
+  cursor: default;
+}
+
+/* Hover (light theme) */
+.pagination-item:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+/* Active page */
+.pagination-item-active {
+  background-color: #1976d2;    /* match your primary if you want */
+  border-color: #1976d2;
+  color: #ffffff;
+}
+
+/* Disabled state */
+.pagination-item-disabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* ============================
+   DARK THEME OVERRIDES
+   hook into: .teacher-dashboard-container.dark { ... }
+   ============================ */
+
+.teacher-dashboard-container.dark .pagination-item {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.teacher-dashboard-container.dark .pagination-item:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.teacher-dashboard-container.dark .pagination-item-active {
+  background-color: #1976d2;
+  border-color: #1976d2;
+  color: #ffffff;
+}

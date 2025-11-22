@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, } from 'react';
 import { Calendar, Clock, Users, Edit, CheckCircle, XCircle, BookOpen } from 'lucide-react';
 import './TeacherAttendanceDashboard.css';
 import Navbar from '../Navbar/Navbar';
 import axios from 'axios';
+import PagePaginate from '../PagePaginate/PagePaginate.jsx';
+import { useNavigate } from 'react-router-dom';
+
+
 
 const TeacherAttendanceDashboard = () => {
   const [attendances, setAttendances] = useState([]);
@@ -15,6 +19,8 @@ const TeacherAttendanceDashboard = () => {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
 
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
   const token = localStorage.getItem('token');
   const teacherId = localStorage.getItem('teacherId');
@@ -25,7 +31,7 @@ const TeacherAttendanceDashboard = () => {
 
   useEffect(() => {
     fetchAttendances();
-  }, []);
+  }, [page]);
 
   const toggleTheme = () => {
     setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
@@ -35,7 +41,7 @@ const TeacherAttendanceDashboard = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `${BACKEND_URL}/attendance/teacher-marked/${teacherId}`,
+        `${BACKEND_URL}/attendance/teacher-marked/${teacherId}?page=${page}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -43,11 +49,14 @@ const TeacherAttendanceDashboard = () => {
         }
       );
 
-      setAttendances(response.data.attendances);
+      // note: server returns attendances, page, totalPages, totalCount
+      console.log('attendances response:', response.data);
+      setAttendances(response.data.attendances || []);
       setTeacherInfo({
         name: response.data.teacher,
         hasAllAccess: response.data.hasAllAccess,
       });
+      setTotalPages(response.data.totalPages || 1);
       setError(null);
     } catch (err) {
       setError('Failed to fetch attendance records');
@@ -56,28 +65,17 @@ const TeacherAttendanceDashboard = () => {
       setLoading(false);
     }
   };
-
-  const handleUpdateClick = async (attendance) => {
-    try {
-      setSelectedAttendance(attendance);
-      setShowUpdateModal(true);
-      
-      const response = await axios.get(
-        `${BACKEND_URL}/attendance/fetch-students-for-update/${attendance.subjectCode}/${attendance.date}`,
-        {
-          
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setStudents(response.data.students);
-    } catch (err) {
-      setError('Failed to fetch students for update');
-      console.error('Error fetching students:', err);
+  const navigate = useNavigate();
+  const handleUpdateClick = (attendance) => {
+  navigate('/update_attendance', {
+    state: {
+      subjectCode: attendance.subjectCode,
+      date: attendance.date,        
+      subjectName: attendance.subjectName,
+      teacherId: teacherId            
     }
-  };
+  });
+};
 
   const handleAttendanceToggle = (studentId) => {
     setStudents(prevStudents =>
@@ -92,7 +90,7 @@ const TeacherAttendanceDashboard = () => {
   const handleSubmitUpdate = async () => {
     try {
       setUpdatingAttendance(true);
-      
+
       const updates = students.map(student => ({
         studentId: student.studentId,
         present: student.present,
@@ -136,15 +134,15 @@ const TeacherAttendanceDashboard = () => {
     });
   };
 
-const formatTime = (dateString) => {
-  if (!dateString) return 'N/A';
-  const date = new Date(dateString);
-  return date.toLocaleTimeString('en-US', {
-    timeZone: 'Asia/Kolkata', // Force IST timezone
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
+  const formatTime = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', {
+      timeZone: 'Asia/Kolkata', // Force IST timezone
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
 
   if (loading) {
@@ -256,77 +254,11 @@ const formatTime = (dateString) => {
             ))}
           </div>
         )}
-      </div>
-
-      {showUpdateModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h2>Update Attendance</h2>
-              <p>
-                {selectedAttendance?.subjectCode} - {selectedAttendance?.subjectName}
-              </p>
-            </div>
-
-            <div className="modal-body">
-              {students.length === 0 ? (
-                <div className="loading-container">
-                  <div className="spinner"></div>
-                  <p>Loading students...</p>
-                </div>
-              ) : (
-                <table className="attendance-table">
-                  <thead>
-                    <tr>
-                      <th>Attendance</th>
-                      <th>Roll Number</th>
-                      <th>Student Name</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {students.map((student) => (
-                      <tr key={student.studentId}>
-                        <td>
-                          <label className="attendance-checkbox">
-                            <input
-                              type="checkbox"
-                              checked={student.present}
-                              onChange={() => handleAttendanceToggle(student.studentId)}
-                            />
-                          </label>
-                        </td>
-                        <td>{student.rollNo}</td>
-                        <td>{student.name}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-
-            <div className="modal-footer">
-              <button
-                onClick={() => {
-                  setShowUpdateModal(false);
-                  setSelectedAttendance(null);
-                  setStudents([]);
-                }}
-                className="modal-button cancel"
-                disabled={updatingAttendance}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmitUpdate}
-                disabled={updatingAttendance}
-                className="modal-button save"
-              >
-                {updatingAttendance ? 'Updating...' : 'Save Changes'}
-              </button>
-            </div>
-          </div>
+        <div className='paginate'>
+          <PagePaginate page={page} setPage={setPage} totalPages={totalPages} />
         </div>
-      )}
+
+      </div>
     </div>
   );
 };

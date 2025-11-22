@@ -408,6 +408,19 @@ const Navbar = ({ theme, toggleTheme }) => {
               </>
             )}
           </li>
+          <li>
+            <p
+              className={`navbar-links ${theme} ${
+                location.pathname === `/attendance_history` ? "active" : ""
+              }`}
+              onClick={() => {
+                navigate(`/attendance_history`);
+                responsive();
+              }}
+            >
+              Attendance History
+            </p>
+          </li>
 
           {!isAdmin && (
             <li>
