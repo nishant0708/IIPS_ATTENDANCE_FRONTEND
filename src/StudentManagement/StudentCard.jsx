@@ -2,7 +2,15 @@ import React, { useState } from 'react';
 import { Edit, Trash2, Save, X, PlusCircle, MinusCircle } from 'lucide-react';
 import "./StudentCard.css";
 
-const StudentCard = ({ student, onEdit, onDelete, onSave }) => {
+const StudentCard = ({
+  student,
+  isSelected,
+  onSelect,
+  onEdit,
+  onDelete,
+  onSave
+}) => {
+
   const [isEditing, setIsEditing] = useState(false);
   const [editedStudent, setEditedStudent] = useState(student);
 
@@ -36,6 +44,12 @@ const StudentCard = ({ student, onEdit, onDelete, onSave }) => {
 
   return (
     <div className="student-card">
+      <input
+        type="checkbox"
+        checked={isSelected}
+        onChange={onSelect}
+        className="student-select-checkbox"
+      />
       <div className="card-actions">
         {isEditing ? (
           <>

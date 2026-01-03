@@ -4,7 +4,7 @@ import "./StudentDashboard.css";
 import Navbar from "../Navbar/Navbar";
 import StudentCard from "./StudentCard";
 import AddStudentForm from "./AddStudentForm";
-import axios from "axios"; 
+import axios from "axios";
 import Loader from "../Loader/Loader";
 import AlertModal from "../AlertModal/AlertModal";
 import { useAttendance } from "../hooks/useAttendance";
@@ -27,6 +27,9 @@ const StudentDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [availableSectionOptions, setAvailableSectionOptions] = useState([]);
+  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [promoting, setPromoting] = useState(false);
+
 
   const token = localStorage.getItem("token");
 
@@ -102,7 +105,7 @@ const StudentDashboard = () => {
     if (course && semester) {
       const sectionOpts = getSectionOptions(course, semester);
       setAvailableSectionOptions(sectionOpts);
-      
+
       if (section && !sectionOpts.find(opt => opt.value === section)) {
         setSection("");
       }
@@ -144,6 +147,73 @@ const StudentDashboard = () => {
       setFilteredStudents(filtered);
     }
   }, [students, searchTerm]);
+  useEffect(() => {
+    setSelectedStudents([]);
+  }, [students]);
+
+  const toggleStudentSelection = (studentId) => {
+    setSelectedStudents((prev) =>
+      prev.includes(studentId)
+        ? prev.filter((id) => id !== studentId)
+        : [...prev, studentId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedStudents.length === filteredStudents.length) {
+      setSelectedStudents([]);
+    } else {
+      setSelectedStudents(filteredStudents.map((s) => s.id));
+    }
+  };
+
+  const handlePromoteStudents = async () => {
+    if (selectedStudents.length === 0) {
+      showAlert("Please select at least one student", true);
+      return;
+    }
+
+    const confirm = window.confirm(
+      `Promote ${selectedStudents.length} selected students to the next semester?`
+    );
+    if (!confirm) return;
+
+    setPromoting(true);
+
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_BACKEND_URL}/student/students/promote`,
+        {
+          studentIds: selectedStudents,
+          promoteToNextYear: true
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      showAlert(
+        `✅ ${response.data.summary.promotedCount} students promoted successfully`,
+        false
+      );
+
+      // Refresh list
+      fetchStudents();
+    } catch (error) {
+      console.error("Promotion error:", error);
+      showAlert(
+        error?.response?.data?.message || "Failed to promote students",
+        true
+      );
+    } finally {
+      setPromoting(false);
+    }
+  };
+
+
+
 
   const showAlert = (msg, error = false) => {
     setModalMessage(msg);
@@ -424,11 +494,11 @@ const StudentDashboard = () => {
               className="studentdashboard_btn_fetch"
               onClick={fetchStudents}
               disabled={
-                loading || 
+                loading ||
                 loadingCourses ||
                 loadingSpecializations ||
-                !course || 
-                !semester || 
+                !course ||
+                !semester ||
                 !courseConfig[course] ||
                 (hasSpecializations && !specialization)
               }
@@ -442,13 +512,38 @@ const StudentDashboard = () => {
         {/* Search Bar and Add Student Button - Only show when students are loaded */}
         {students.length > 0 && (
           <div className="studentdashboard_search_add_container">
-            <button
-              className="studentdashboard_add_btn"
-              onClick={() => setShowAddForm(!showAddForm)}
-            >
-              <PlusCircle className="studentdashboard_icon" />
-              Add Student
-            </button>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <button
+                className="studentdashboard_add_btn"
+                onClick={() => setShowAddForm(!showAddForm)}
+              >
+                <PlusCircle className="studentdashboard_icon" />
+                Add Student
+              </button>
+
+              <button
+                className="studentdashboard_btn_fetch"
+                onClick={handleSelectAll}
+              >
+                {selectedStudents.length === filteredStudents.length
+                  ? "Clear Selection"
+                  : "Select All"}
+              </button>
+
+              <button
+                className="studentdashboard_btn_fetch"
+                onClick={handlePromoteStudents}
+                disabled={selectedStudents.length === 0 || promoting}
+                style={{
+                  backgroundColor: "#16a34a",
+                  color: "#fff",
+                  opacity: selectedStudents.length === 0 ? 0.6 : 1
+                }}
+              >
+                {promoting ? "Promoting..." : "Promote to Next Semester"}
+              </button>
+            </div>
+
             <div className="studentdashboard_search_bar">
               <Search className="studentdashboard_search_icon" />
               <input
@@ -461,6 +556,7 @@ const StudentDashboard = () => {
             </div>
           </div>
         )}
+
 
         {/* Add Student Form */}
         {showAddForm && (
@@ -499,10 +595,13 @@ const StudentDashboard = () => {
                 <StudentCard
                   key={student.id}
                   student={student}
+                  isSelected={selectedStudents.includes(student.id)}
+                  onSelect={() => toggleStudentSelection(student.id)}
                   onEdit={handleEditStudent}
                   onDelete={handleDeleteStudent}
                   onSave={handleEditStudent}
                 />
+
               ))}
             </div>
           </div>
