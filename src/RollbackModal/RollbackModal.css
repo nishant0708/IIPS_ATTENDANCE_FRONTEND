@@ -1,0 +1,119 @@
+/* ================= OVERLAY ================= */
+.rollback_modal_overlay {
+  background-color: rgba(0, 0, 0, 0.75);
+  position: fixed;
+  inset: 0;
+  z-index: 9111;
+  display: flex;
+  backdrop-filter: blur(12px);
+  justify-content: center;
+  align-items: center;
+}
+
+/* ================= MODAL BASE ================= */
+.rollback_modal {
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  animation: rollbackFadeIn 0.25s ease-in-out;
+}
+
+/* 🌞 LIGHT MODE (LIKE AlertModal) */
+.rollback_modal.light {
+  background-color: #e6e6e6;
+  color: #000;
+}
+
+/* 🌙 DARK MODE (LIKE AlertModal) */
+.rollback_modal.dark {
+  background-color: #333;
+  color: #fff;
+}
+
+/* ================= TITLE ================= */
+.rollback_modal_title {
+  margin-top: 0;
+  font-size: 24px;
+}
+
+/* ================= TEXT ================= */
+.rollback_modal_text {
+  margin-bottom: 20px;
+  font-size: 18px;
+}
+
+/* ================= ACTIONS ================= */
+.rollback_modal_actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.rollback_modal_actions_row {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ================= BUTTON BASE ================= */
+.rollback_btn {
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  min-width: 180px;
+  font-size: 14px;
+}
+
+/* ================= PRIMARY ================= */
+.rollback_btn.primary {
+  background-color: green;
+  color: #fff;
+}
+
+.rollback_btn.primary:hover {
+  background-color: rgba(0, 128, 0, 0.4);
+}
+
+/* ================= DANGER ================= */
+.rollback_btn.danger {
+  background-color: red;
+  color: #fff;
+}
+
+.rollback_btn.danger:hover {
+  background-color: rgba(255, 0, 0, 0.4);
+}
+
+/* ================= CANCEL ================= */
+.rollback_btn.secondary {
+  background-color: #555;
+  color: #fff;
+  min-width: 140px;
+}
+
+.rollback_btn.secondary:hover {
+  background-color: #777;
+}
+
+/* ================= DISABLED ================= */
+.rollback_btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ================= ANIMATION ================= */
+@keyframes rollbackFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
