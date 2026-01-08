@@ -74,6 +74,20 @@
   display: flex;
   gap: 8px;
 }
+.student-card {
+  position: relative;
+}
+
+.student-select-checkbox {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  z-index: 5;
+}
+
 
 .action-btn {
   display: flex;

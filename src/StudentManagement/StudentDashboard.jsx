@@ -4,11 +4,13 @@ import "./StudentDashboard.css";
 import Navbar from "../Navbar/Navbar";
 import StudentCard from "./StudentCard";
 import AddStudentForm from "./AddStudentForm";
-import axios from "axios"; 
+import axios from "axios";
 import Loader from "../Loader/Loader";
 import AlertModal from "../AlertModal/AlertModal";
 import { useAttendance } from "../hooks/useAttendance";
 import { useSpecializations } from "../hooks/useSpecializations";
+import RollbackModal from "../RollbackModal/RollbackModal";
+import PromoteStudentsModal from "../PromoteModal/PromoteStudentsModal";
 
 const StudentDashboard = () => {
   const [course, setCourse] = useState("");
@@ -22,11 +24,18 @@ const StudentDashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [isError, setIsError] = useState(false);
-  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "dark");
   const [availableSemesters, setAvailableSemesters] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [availableSectionOptions, setAvailableSectionOptions] = useState([]);
+  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [promoting, setPromoting] = useState(false);
+  const [rollbackModalOpen, setRollbackModalOpen] = useState(false);
+  const [rollbackLoading, setRollbackLoading] = useState(false);
+  const [promoteModalOpen, setPromoteModalOpen] = useState(false);
+  const [promoteLoading, setPromoteLoading] = useState(false);
+
 
   const token = localStorage.getItem("token");
 
@@ -102,7 +111,7 @@ const StudentDashboard = () => {
     if (course && semester) {
       const sectionOpts = getSectionOptions(course, semester);
       setAvailableSectionOptions(sectionOpts);
-      
+
       if (section && !sectionOpts.find(opt => opt.value === section)) {
         setSection("");
       }
@@ -144,6 +153,69 @@ const StudentDashboard = () => {
       setFilteredStudents(filtered);
     }
   }, [students, searchTerm]);
+  useEffect(() => {
+    setSelectedStudents([]);
+  }, [students]);
+
+  const toggleStudentSelection = (studentId) => {
+    setSelectedStudents((prev) =>
+      prev.includes(studentId)
+        ? prev.filter((id) => id !== studentId)
+        : [...prev, studentId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedStudents.length === filteredStudents.length) {
+      setSelectedStudents([]);
+    } else {
+      setSelectedStudents(filteredStudents.map((s) => s.id));
+    }
+  };
+
+  const executePromotion = async (promoteToNextYear) => {
+    if (selectedStudents.length === 0) {
+      showAlert("Please select students to promote", true);
+      return;
+    }
+
+    setPromoteLoading(true);
+
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_BACKEND_URL}/student/students/promote`,
+        {
+          studentIds: selectedStudents,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      showAlert(
+        `students promoted successfully`,
+        false
+      );
+
+      setPromoteModalOpen(false);
+      setSelectedStudents([]);
+      fetchStudents();
+
+    } catch (error) {
+      console.error("Promotion error:", error);
+      showAlert(
+        error?.response?.data?.message || "Failed to promote students",
+        true
+      );
+    } finally {
+      setPromoteLoading(false);
+    }
+  };
+
+
+
 
   const showAlert = (msg, error = false) => {
     setModalMessage(msg);
@@ -245,6 +317,49 @@ const StudentDashboard = () => {
     setShowAddForm(false);
   };
 
+  const executeRollback = async (resetAttendance) => {
+    if (selectedStudents.length === 0) {
+      showAlert("Please select students to rollback", true);
+      return;
+    }
+
+    setRollbackLoading(true);
+
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_BACKEND_URL}/student/students/rollback-promotion`,
+        {
+          studentIds: selectedStudents,
+          resetAttendance
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      showAlert(
+        `✅ ${response.data.summary.rolledBack} students rolled back successfully`,
+        false
+      );
+
+      setRollbackModalOpen(false);
+      setSelectedStudents([]);
+      fetchStudents();
+
+    } catch (error) {
+      console.error("Rollback error:", error);
+      showAlert(
+        error?.response?.data?.message || "Rollback failed",
+        true
+      );
+    } finally {
+      setRollbackLoading(false);
+    }
+  };
+
+
   const handleEditStudent = async (studentId, editedData) => {
     setLoading(true);
 
@@ -334,6 +449,26 @@ const StudentDashboard = () => {
         message={modalMessage}
         iserror={isError}
       />
+      <RollbackModal
+        isOpen={rollbackModalOpen}
+        onClose={() => setRollbackModalOpen(false)}
+        onRollbackOnly={() => executeRollback(false)}
+        onRollbackWithReset={() => executeRollback(true)}
+        loading={rollbackLoading}
+        theme={theme}
+      />
+      <PromoteStudentsModal
+        isOpen={promoteModalOpen}
+        onClose={() => setPromoteModalOpen(false)}
+        onConfirm={({ promoteToNextYear }) =>
+          executePromotion(promoteToNextYear)
+        }
+        loading={promoteLoading}
+        selectedCount={selectedStudents.length}
+        theme={theme}
+      />
+
+
 
       <div className="studentdashboard_section">
         <div className="studentdashboard_header">
@@ -424,11 +559,11 @@ const StudentDashboard = () => {
               className="studentdashboard_btn_fetch"
               onClick={fetchStudents}
               disabled={
-                loading || 
+                loading ||
                 loadingCourses ||
                 loadingSpecializations ||
-                !course || 
-                !semester || 
+                !course ||
+                !semester ||
                 !courseConfig[course] ||
                 (hasSpecializations && !specialization)
               }
@@ -442,13 +577,63 @@ const StudentDashboard = () => {
         {/* Search Bar and Add Student Button - Only show when students are loaded */}
         {students.length > 0 && (
           <div className="studentdashboard_search_add_container">
-            <button
-              className="studentdashboard_add_btn"
-              onClick={() => setShowAddForm(!showAddForm)}
-            >
-              <PlusCircle className="studentdashboard_icon" />
-              Add Student
-            </button>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <button
+                className="studentdashboard_add_btn"
+                onClick={() => setShowAddForm(!showAddForm)}
+              >
+                <PlusCircle className="studentdashboard_icon" />
+                Add Student
+              </button>
+
+              <button
+                className="studentdashboard_btn_fetch"
+                onClick={handleSelectAll}
+              >
+                {selectedStudents.length === filteredStudents.length
+                  ? "Clear Selection"
+                  : "Select All"}
+              </button>
+
+              <button
+                className="studentdashboard_btn_fetch"
+                onClick={() => {
+                  if (selectedStudents.length === 0) {
+                    showAlert("Please select students to promote", true);
+                    return;
+                  }
+                  setPromoteModalOpen(true);
+                }}
+                disabled={selectedStudents.length === 0}
+                style={{
+                  backgroundColor: "#16a34a",
+                  color: "#fff",
+                  opacity: selectedStudents.length === 0 ? 0.6 : 1
+                }}
+              >
+                Promote to Next Semester
+              </button>
+
+
+              <button
+                className="studentdashboard_btn_fetch"
+                onClick={() => {
+                  if (selectedStudents.length === 0) {
+                    showAlert("Please select students to rollback", true);
+                    return;
+                  }
+                  setRollbackModalOpen(true);
+                }}
+                style={{
+                  backgroundColor: "#dc2626",
+                  color: "#fff",
+                  opacity: selectedStudents.length === 0 ? 0.6 : 1
+                }}
+              >
+                Rollback Promotion
+              </button>
+
+            </div>
             <div className="studentdashboard_search_bar">
               <Search className="studentdashboard_search_icon" />
               <input
@@ -461,6 +646,7 @@ const StudentDashboard = () => {
             </div>
           </div>
         )}
+
 
         {/* Add Student Form */}
         {showAddForm && (
@@ -499,10 +685,13 @@ const StudentDashboard = () => {
                 <StudentCard
                   key={student.id}
                   student={student}
+                  isSelected={selectedStudents.includes(student.id)}
+                  onSelect={() => toggleStudentSelection(student.id)}
                   onEdit={handleEditStudent}
                   onDelete={handleDeleteStudent}
                   onSave={handleEditStudent}
                 />
+
               ))}
             </div>
           </div>
