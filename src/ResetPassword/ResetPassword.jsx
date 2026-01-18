@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import Logo from "../Assets/iips_logo2.png";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import "./Reset_Password.css";
+import "./ResetPassword.css";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import AlertModal from "../AlertModal/AlertModal";
 import Loader from "../Loader/Loader";
 
-const Reset_Password = () => {
+const ResetPassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [d1, setDisplay1] = useState(false);
@@ -150,4 +150,4 @@ const Reset_Password = () => {
   );
 };
 
-export default Reset_Password;
+export default ResetPassword;

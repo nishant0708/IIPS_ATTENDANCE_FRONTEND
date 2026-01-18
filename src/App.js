@@ -4,8 +4,8 @@ import Login from './Login/Login';
 
 import SignUp from './Sign_up/SignUp';
 import VerifyOtp from './Sign_up/VerifyOtp';
-import Forgot_Password from './Forgot_Password/Forgot_Password';
-import Reset_Password from './Reset_Password/Reset_Password';
+import ForgotPassword from './ForgotPassword/ForgotPassword';
+import ResetPassword from './ResetPassword/ResetPassword';
 import axios from 'axios';
 
 import Error404 from './error/error404';
@@ -64,8 +64,8 @@ const [Admin, setAdmin] = useState(false);
       <Route path="/" element={<Login />} />
       <Route path="/sign_up" element={<SignUp />} />
       <Route path="/verify_passcode" element={<VerifyOtp />} />
-      <Route path="/forgot_password" element={<Forgot_Password />} />
-      <Route path="/reset_password" element={<Reset_Password />} />
+      <Route path="/forgot_password" element={<ForgotPassword />} />
+      <Route path="/reset_password" element={<ResetPassword />} />
 
       {isAuthenticated && (
         // All protected routes should be placed here 
