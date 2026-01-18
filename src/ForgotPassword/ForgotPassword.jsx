@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Logo from "../Assets/iips_logo2.png";
-import "./Forgot_Password.css";
+import "./ForgotPassword.css";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import AlertModal from "../AlertModal/AlertModal";

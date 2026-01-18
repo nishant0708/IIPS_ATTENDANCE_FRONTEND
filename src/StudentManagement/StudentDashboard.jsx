@@ -64,9 +64,13 @@ const StudentDashboard = () => {
 
   // Get section options based on course and semester
   const getSectionOptions = (courseKey, semesterNum) => {
-    if (courseKey === "MBA(MS)-2Yrs" && parseInt(semesterNum) === 1||2) {
+    if (
+      courseKey === "MBA(MS)2Years" &&
+      (parseInt(semesterNum) === 1 || parseInt(semesterNum) === 2)
+    ) {
       return mbaSem1SectionOptions;
     }
+
     return sectionOptions;
   };
 

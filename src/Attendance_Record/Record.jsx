@@ -34,7 +34,7 @@ const Record = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [filtersReadyForFetch, setFiltersReadyForFetch] = useState(false); // New state to trigger fetch
-  
+
   // Track what's been fetched to avoid duplicate API calls
   const fetchedSemesters = useRef(null);
   const fetchedSpecializations = useRef(null);
@@ -42,11 +42,11 @@ const Record = () => {
 
   // Custom hooks
   const { courseConfig, loadingCourses } = useAttendance();
-  const { 
-    subjects, 
-    loadingSubjects, 
-    fetchSubjects, 
-    resetSubjects 
+  const {
+    subjects,
+    loadingSubjects,
+    fetchSubjects,
+    resetSubjects
   } = useSubjects();
   const {
     availableSpecializations,
@@ -55,18 +55,17 @@ const Record = () => {
     fetchSpecializations,
     resetSpecializations
   } = useSpecializations();
-  const { 
-    availableSemesters, 
-    loadingSemesters, 
-    fetchSemesters, 
-    resetSemesters 
+  const {
+    availableSemesters,
+    loadingSemesters,
+    fetchSemesters,
+    resetSemesters
   } = useSemesters(); // Use the new hook
-  
+
   // Use the attendance summary hook
   const {
     attendanceSummary,
     loading: attendanceLoading,
-    error: attendanceError,
     fetchAttendanceSummary,
     fetchWithDateFilter,
     clearAttendanceSummary,
@@ -90,9 +89,13 @@ const Record = () => {
 
   // Get section options based on course and semester - same as Dashboard
   const getSectionOptions = (courseKey, semesterNum) => {
-    if (courseKey === "MBA(MS)2Years" && parseInt(semesterNum) === 1||2) {
+    if (
+      courseKey === "MBA(MS)2Years" &&
+      (parseInt(semesterNum) === 1 || parseInt(semesterNum) === 2)
+    ) {
       return mbaSem1SectionOptions;
     }
+
     return sectionOptions;
   };
 
@@ -154,7 +157,7 @@ const Record = () => {
     if (course && semester) {
       const sectionOpts = getSectionOptions(course, semester);
       setAvailableSectionOptions(sectionOpts);
-      
+
       if (section && !sectionOpts.find(opt => opt.value === section)) {
         setSection("");
       }
@@ -167,7 +170,7 @@ const Record = () => {
   useEffect(() => {
     if (course && semester && courseConfig[course]) {
       const specializationKey = `${course}-${semester}`;
-      
+
       // Check if we already fetched specializations for this course/semester combo
       if (fetchedSpecializations.current !== specializationKey) {
         fetchSpecializations(course, semester, courseConfig)
@@ -188,10 +191,10 @@ const Record = () => {
   // Fetch subjects when course, semester, or specialization change - with memoization
   useEffect(() => {
     if (course && semester && courseConfig[course]) {
-      const subjectKey = hasSpecializations 
-        ? `${course}-${semester}-${specialization}` 
+      const subjectKey = hasSpecializations
+        ? `${course}-${semester}-${specialization}`
         : `${course}-${semester}`;
-      
+
       if (hasSpecializations) {
         if (specialization) {
           // Only fetch if we haven't fetched this combination before
@@ -249,18 +252,18 @@ const Record = () => {
 
     if (savedFilters.course && !filtersLoaded.current) {
       console.log("Restoring saved filters");
-      
+
       // Reset fetch tracking to allow fresh fetches for restored filters
       fetchedSemesters.current = null;
       fetchedSpecializations.current = null;
       fetchedSubjects.current = null;
-      
+
       setCourse(savedFilters.course);
-      
+
       if (savedFilters.semester) {
         setSemester(savedFilters.semester);
       }
-      
+
       if (savedFilters.specialization) {
         setSpecialization(savedFilters.specialization);
       }
@@ -268,7 +271,7 @@ const Record = () => {
       if (savedFilters.section) {
         setSection(savedFilters.section);
       }
-      
+
       if (savedFilters.academicYear) {
         setAcademicYear(savedFilters.academicYear);
       }
@@ -288,7 +291,7 @@ const Record = () => {
         console.log("Returning from detail page, will fetch data");
         shouldFetchData.current = true;
       }
-      
+
       // Use setTimeout to mark filters as loaded after React finishes rendering
       // and all API calls (semesters, specializations, subjects) complete
       setTimeout(() => {
@@ -313,20 +316,20 @@ const Record = () => {
       (!hasSpecializations || specialization);
 
     // Check if subjects array has loaded and includes the selected subject
-    const subjectIsReady = subjects.length > 0 && 
+    const subjectIsReady = subjects.length > 0 &&
       subjects.some(s => (s.Sub_Code || s._id) === subject);
 
     // Also check that we're not currently loading subjects
     const notLoadingSubjects = !loadingSubjects;
 
-    console.log("Auto-fetch triggered by filtersReadyForFetch:", { 
-      allFiltersSelected, 
+    console.log("Auto-fetch triggered by filtersReadyForFetch:", {
+      allFiltersSelected,
       subjectIsReady,
       notLoadingSubjects,
-      course, 
-      semester, 
-      subject, 
-      academicYear, 
+      course,
+      semester,
+      subject,
+      academicYear,
       specialization,
       section,
       hasSpecializations,
@@ -367,12 +370,12 @@ const Record = () => {
     setSpecialization("");
     setSection("");
     setSubject("");
-    
+
     // Clear the fetch tracking when user manually changes course
     fetchedSemesters.current = null;
     fetchedSpecializations.current = null;
     fetchedSubjects.current = null;
-    
+
     // Only clear and reset if user is manually changing
     if (filtersLoaded.current) {
       clearAttendanceSummary();
@@ -386,7 +389,7 @@ const Record = () => {
     setSubject("");
     setSpecialization("");
     setSection("");
-    
+
     // Only clear if user is manually changing (not during filter restoration)
     if (filtersLoaded.current) {
       clearAttendanceSummary();
@@ -396,7 +399,7 @@ const Record = () => {
   const handleSpecializationChange = (e) => {
     setSpecialization(e.target.value);
     setSubject("");
-    
+
     // Only clear if user is manually changing (not during filter restoration)
     if (filtersLoaded.current) {
       clearAttendanceSummary();
@@ -442,7 +445,7 @@ const Record = () => {
     // Update state first
     setStartDate(newStartDate);
     setEndDate(newEndDate);
-    
+
     // Save date filter to localStorage
     const savedFilters = JSON.parse(localStorage.getItem("attendanceFilters")) || {};
     const updatedFilters = {
@@ -451,7 +454,7 @@ const Record = () => {
       endDate: newEndDate,
     };
     localStorage.setItem("attendanceFilters", JSON.stringify(updatedFilters));
-    
+
     // If we have the required filters, refetch with NEW date filter values
     if (course && semester && subject && academicYear) {
       await fetchWithDateFilter({
@@ -537,7 +540,7 @@ const Record = () => {
         onClose={() => setIsNotificationModalOpen(false)}
         attendanceSummary={attendanceSummary}
       />
-      
+
       <DateFilterModal
         isOpen={isDateFilterModalOpen}
         onClose={() => setIsDateFilterModalOpen(false)}
@@ -673,14 +676,14 @@ const Record = () => {
             className="record_btn-fetch"
             onClick={handleFetchAttendanceSummary}
             disabled={
-              attendanceLoading || 
+              attendanceLoading ||
               loadingCourses ||
               loadingSemesters ||
               loadingSpecializations ||
-              !course || 
-              !semester || 
-              !academicYear || 
-              !subject || 
+              !course ||
+              !semester ||
+              !academicYear ||
+              !subject ||
               !courseConfig[course] ||
               (hasSpecializations && !specialization)
             }
@@ -719,7 +722,7 @@ const Record = () => {
                 {startDate && endDate ? 'Date Filter Applied' : 'Filter by Date'}
               </button>
             </div>
-            
+
             <table className="record_summary-table">
               <thead>
                 <tr className="record_table-header">
