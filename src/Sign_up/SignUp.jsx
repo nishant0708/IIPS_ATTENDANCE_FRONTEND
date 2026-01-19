@@ -118,11 +118,6 @@ const SignUp = () => {
     if(!isErrorAlert) navigate("/verify_passcode");
   };
 
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme); // Save theme to local storage
-  };
 
   return (
     <div className={`sign_up_Box_min ${theme}`}>

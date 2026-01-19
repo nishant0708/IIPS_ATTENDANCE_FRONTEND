@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 export const useAttendance = () => {
@@ -7,7 +7,7 @@ export const useAttendance = () => {
   const token = localStorage.getItem("token");
   const teacherId = localStorage.getItem("teacherId");  
 
-  const fetchCourses = async () => {
+  const fetchCourses = useCallback(async () => {
     setLoadingCourses(true);
     try {
       const response = await axios.post(
@@ -32,11 +32,11 @@ export const useAttendance = () => {
     } finally {
       setLoadingCourses(false);
     }
-  };
+  },[teacherId,token])
 
   useEffect(() => {
     fetchCourses();
-  }, []);
+  }, [fetchCourses]);
 
   return { courseConfig, loadingCourses, fetchCourses };
 };

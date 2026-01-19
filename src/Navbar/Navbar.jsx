@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { FaPowerOff } from "react-icons/fa";
 import "./Navbar.css";
 import defaultPhoto from "../Assets/profile_photo.png";
-import axios from "axios";
+
 
 const Navbar = ({ theme, toggleTheme }) => {
   const [open, setOpen] = useState(false);

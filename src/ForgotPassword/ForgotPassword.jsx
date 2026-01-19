@@ -12,7 +12,7 @@ const ForgotPassword = () => {
     const [loading, setLoading] = useState(true);
     const [modalIsOpen, setModalIsOpen] = useState(false); // Modal state
     const [isError, setIsError] = useState(false); // Error state for modal
-    const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light'); // Initialize theme from local storage
+    const [theme] = useState(localStorage.getItem('theme') || 'light'); // Initialize theme from local storage
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -42,11 +42,7 @@ const ForgotPassword = () => {
         navigate("/"); 
     };
 
-    const toggleTheme = () => {
-        const newTheme = theme === 'light' ? 'dark' : 'light';
-        setTheme(newTheme);
-        localStorage.setItem('theme', newTheme); // Save theme to local storage
-    };
+
 
     return (
         <div className={`forgot-container-main ${theme}`}>

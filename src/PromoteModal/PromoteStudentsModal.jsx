@@ -9,14 +9,10 @@ const PromoteStudentsModal = ({
     theme,
     selectedCount
 }) => {
-    const [promoteToNextYear, setPromoteToNextYear] = useState(false);
+    const [promoteToNextYear] = useState(false);
 
     if (!isOpen) return null;
 
-    const handleConfirm = () => {
-        onConfirm({ promoteToNextYear });
-        onClose();
-    };
 
     return (
         <div className="promote_modal_overlay">

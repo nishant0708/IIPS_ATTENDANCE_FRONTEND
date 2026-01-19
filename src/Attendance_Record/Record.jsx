@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import "./Record.css";
 import Navbar from "../Navbar/Navbar";
 import Loader from "../Loader/Loader";
@@ -71,24 +71,23 @@ const Record = () => {
     clearAttendanceSummary,
     calculatePercentage,
     getAttendanceStatus,
-    getAttendanceStats
   } = useAttendanceSummary();
 
   // Section options - same as Dashboard
-  const sectionOptions = [
+  const sectionOptions = useMemo(()=>([
     { value: "A", label: "A" },
     { value: "B", label: "B" }
-  ];
+  ]),[])
 
   // Special section options for MBA(MS) 2yrs semester 1
-  const mbaSem1SectionOptions = [
+  const mbaSem1SectionOptions = useMemo(()=>([
     { value: "A", label: "A" },
     { value: "B", label: "B" },
     { value: "C", label: "C" }
-  ];
+  ]),[])
 
   // Get section options based on course and semester - same as Dashboard
-  const getSectionOptions = (courseKey, semesterNum) => {
+  const getSectionOptions = useCallback((courseKey, semesterNum) => {
     if (
       courseKey === "MBA(MS)2Years" &&
       (parseInt(semesterNum) === 1 || parseInt(semesterNum) === 2)
@@ -97,7 +96,7 @@ const Record = () => {
     }
 
     return sectionOptions;
-  };
+  },[sectionOptions,mbaSem1SectionOptions])
 
   // Generate academic year options
   const generateAcademicYears = () => {
@@ -150,7 +149,7 @@ const Record = () => {
         resetSpecializations();
       }
     }
-  }, [course, courseConfig, fetchSemesters]);
+  }, [course, courseConfig, fetchSemesters,resetSemesters,resetSpecializations,resetSubjects,semester]);
 
   // Handle section options based on course and semester - same as Dashboard
   useEffect(() => {
@@ -164,7 +163,7 @@ const Record = () => {
     } else {
       setAvailableSectionOptions(sectionOptions);
     }
-  }, [course, semester]);
+  }, [course, semester,getSectionOptions,section,sectionOptions]);
 
   // Fetch specializations when course and semester change - with memoization
   useEffect(() => {
@@ -186,7 +185,7 @@ const Record = () => {
       fetchedSpecializations.current = null;
       setSpecialization("");
     }
-  }, [course, semester, courseConfig]);
+  }, [course, semester, courseConfig,fetchSpecializations,resetSpecializations]);
 
   // Fetch subjects when course, semester, or specialization change - with memoization
   useEffect(() => {
@@ -243,7 +242,7 @@ const Record = () => {
       }
       fetchedSubjects.current = null;
     }
-  }, [course, semester, specialization, hasSpecializations, courseConfig]);
+  }, [course, semester, specialization, hasSpecializations, courseConfig,clearAttendanceSummary,fetchSubjects,resetSubjects]);
 
   // Load saved filters on component mount
   useEffect(() => {
@@ -308,6 +307,35 @@ const Record = () => {
     }
   }, [location.state]);
 
+  // Main fetch function using the hook
+  const handleFetchAttendanceSummary = useCallback(async () => {
+    const result = await fetchAttendanceSummary({
+      course,
+      semester,
+      subject,
+      academicYear,
+      specialization,
+      section,
+      startDate,
+      endDate,
+      subjects,
+      hasSpecializations,
+      onError: showAlert
+    });
+
+    return result;
+  },[course,
+      semester,
+      subject,
+      academicYear,
+      specialization,
+      section,
+      startDate,
+      endDate,
+      subjects,
+      hasSpecializations,fetchAttendanceSummary])
+
+
   // Auto-fetch effect - triggers when filters are ready
   useEffect(() => {
     if (!filtersReadyForFetch) return;
@@ -343,7 +371,7 @@ const Record = () => {
       setFiltersReadyForFetch(false);
       shouldFetchData.current = false;
     }
-  }, [filtersReadyForFetch, subjects, loadingSubjects]);
+  }, [filtersReadyForFetch, subjects, loadingSubjects,academicYear,course,handleFetchAttendanceSummary,hasSpecializations,section,semester,specialization,subject]);
 
   // Save filters to localStorage whenever they change
   useEffect(() => {
@@ -422,25 +450,7 @@ const Record = () => {
     setAcademicYear(e.target.value);
   };
 
-  // Main fetch function using the hook
-  const handleFetchAttendanceSummary = async () => {
-    const result = await fetchAttendanceSummary({
-      course,
-      semester,
-      subject,
-      academicYear,
-      specialization,
-      section,
-      startDate,
-      endDate,
-      subjects,
-      hasSpecializations,
-      onError: showAlert
-    });
-
-    return result;
-  };
-
+  
   const handleDateFilterApply = async (newStartDate, newEndDate) => {
     // Update state first
     setStartDate(newStartDate);
@@ -500,14 +510,7 @@ const Record = () => {
     });
   };
 
-  // Open notification modal
-  const openNotificationModal = () => {
-    if (attendanceSummary.length === 0) {
-      showAlert("No student data available to send notifications", true);
-      return;
-    }
-    setIsNotificationModalOpen(true);
-  };
+
 
   const toggleTheme = () => {
     if (theme === "light" || !theme) {
@@ -520,7 +523,7 @@ const Record = () => {
   };
 
   // Get attendance statistics for display
-  const stats = getAttendanceStats();
+  
 
   return (
     <div className={`record_container ${theme}`}>

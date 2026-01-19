@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { PlusCircle, Search, Info, X, Plus } from "lucide-react";
+import { PlusCircle, Search, X, Plus } from "lucide-react";
 import "./TeacherDashboard.css"; 
 import Navbar from "../Navbar/Navbar";
 import TeacherCard from "./TeacherCard"; 
@@ -177,7 +177,7 @@ const fetchAllSubjects = async () => {
   useEffect(() => {
     fetchTeachers();
     fetchAllSubjects();
-  }, []);
+  }, [fetchAllSubjects,fetchTeachers]);
 
   const showAlert = (msg, error = false) => {
     setModalMessage(msg);

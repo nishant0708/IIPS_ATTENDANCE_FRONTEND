@@ -63,7 +63,7 @@ const Profile = () => {
     };
 
     fetchTeacherDetails();
-  }, []);
+  }, [token]);
 
   const openModal = () => {
     setNewProfileData({ ...profileData, password: "", confirmPassword: "" });

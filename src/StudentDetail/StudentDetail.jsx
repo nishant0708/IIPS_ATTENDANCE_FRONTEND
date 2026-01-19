@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './StudentDetail.css';
 import Navbar from '../Navbar/Navbar';
 import axios from 'axios';
-import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import Loader from '../Loader/Loader';
 import AlertModal from '../AlertModal/AlertModal';
 
@@ -27,7 +27,7 @@ const StudentDetail = () => {
       fetchStudentInfo();
       fetchAttendanceDetails();
     }
-  }, [studentId, subject, semester, academicYear]);
+  }, [studentId, subject, semester, academicYear,fetchAttendanceDetails,fetchStudentInfo]);
   useEffect(() => {
   window.scrollTo(0, 0);
 }, []);

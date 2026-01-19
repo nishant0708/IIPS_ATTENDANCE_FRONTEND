@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Edit, Trash2, Save, X, Key, Plus, Search } from 'lucide-react';
+import { Edit, Trash2, Save, X, Key, Search } from 'lucide-react';
 import "../StudentManagement/StudentCard.css";
 
 const TeacherCard = ({ teacher, onEdit, onDelete, onUpdatePassword, allSubjects = [] }) => {
