@@ -11,7 +11,7 @@ import { useSubjects } from "../hooks/useSubjects";
 import { useSpecializations } from "../hooks/useSpecializations";
 import { useAttendance } from "../hooks/useAttendance";
 import { useAttendanceSummary } from "../hooks/useAttendanceSummary";
-import { useSemesters } from "../hooks/useSemesters"; // Import the new hook
+import { useSemesters } from "../hooks/useSemesters";
 
 const Record = () => {
   const navigate = useNavigate();
@@ -33,7 +33,7 @@ const Record = () => {
   const [isDateFilterModalOpen, setIsDateFilterModalOpen] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [filtersReadyForFetch, setFiltersReadyForFetch] = useState(false); // New state to trigger fetch
+  const [filtersReadyForFetch, setFiltersReadyForFetch] = useState(false);
 
   // Track what's been fetched to avoid duplicate API calls
   const fetchedSemesters = useRef(null);
@@ -60,7 +60,7 @@ const Record = () => {
     loadingSemesters,
     fetchSemesters,
     resetSemesters
-  } = useSemesters(); // Use the new hook
+  } = useSemesters();
 
   // Use the attendance summary hook
   const {
@@ -73,20 +73,19 @@ const Record = () => {
     getAttendanceStatus,
   } = useAttendanceSummary();
 
-  // Section options - same as Dashboard
-  const sectionOptions = useMemo(()=>([
+  // Memoized section options
+  const sectionOptions = useMemo(() => [
     { value: "A", label: "A" },
     { value: "B", label: "B" }
-  ]),[])
+  ], []);
 
-  // Special section options for MBA(MS) 2yrs semester 1
-  const mbaSem1SectionOptions = useMemo(()=>([
+  const mbaSem1SectionOptions = useMemo(() => [
     { value: "A", label: "A" },
     { value: "B", label: "B" },
     { value: "C", label: "C" }
-  ]),[])
+  ], []);
 
-  // Get section options based on course and semester - same as Dashboard
+  // Memoized helper functions
   const getSectionOptions = useCallback((courseKey, semesterNum) => {
     if (
       courseKey === "MBA(MS)2Years" &&
@@ -94,12 +93,10 @@ const Record = () => {
     ) {
       return mbaSem1SectionOptions;
     }
-
     return sectionOptions;
-  },[sectionOptions,mbaSem1SectionOptions])
+  }, [sectionOptions, mbaSem1SectionOptions]);
 
-  // Generate academic year options
-  const generateAcademicYears = () => {
+  const generateAcademicYears = useCallback(() => {
     const currentYear = new Date().getFullYear();
     const years = [];
     for (let i = 0; i < 2; i++) {
@@ -108,23 +105,21 @@ const Record = () => {
       years.push(`${startYear}-${endYear}`);
     }
     return years;
-  };
+  }, []);
 
-  const showAlert = (msg, error = false) => {
+  const showAlert = useCallback((msg, error = false) => {
     setModalMessage(msg);
     setIsError(error);
     setIsModalOpen(true);
-  };
+  }, []);
 
-  // Handle course change - updated to use hook with memoization
+  // Handle course change - fetch semesters
   useEffect(() => {
     if (course && courseConfig[course]) {
-      // Check if we already fetched semesters for this course
       if (fetchedSemesters.current !== course) {
         fetchSemesters(course, courseConfig)
           .then(semesters => {
             fetchedSemesters.current = course;
-            // Only reset semester if it's not in the accessible list AND filters have been loaded
             if (semester && !semesters.includes(parseInt(semester)) && filtersLoaded.current) {
               setSemester("");
               if (filtersLoaded.current) {
@@ -133,14 +128,13 @@ const Record = () => {
               }
             }
           })
-          .catch(error => {
+          .catch(() => {
             showAlert("Failed to fetch semesters. Please try again.", true);
           });
       }
     } else {
       resetSemesters();
       fetchedSemesters.current = null;
-      // Only reset if filters were already loaded (not initial mount)
       if (filtersLoaded.current) {
         setSemester("");
         resetSubjects();
@@ -149,9 +143,10 @@ const Record = () => {
         resetSpecializations();
       }
     }
-  }, [course, courseConfig, fetchSemesters,resetSemesters,resetSpecializations,resetSubjects,semester]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [course, semester]); // Removed courseConfig, fetchSemesters, resetSemesters, resetSpecializations, resetSubjects
 
-  // Handle section options based on course and semester - same as Dashboard
+  // Handle section options based on course and semester
   useEffect(() => {
     if (course && semester) {
       const sectionOpts = getSectionOptions(course, semester);
@@ -163,20 +158,19 @@ const Record = () => {
     } else {
       setAvailableSectionOptions(sectionOptions);
     }
-  }, [course, semester,getSectionOptions,section,sectionOptions]);
+  }, [course, semester, section, getSectionOptions, sectionOptions]);
 
-  // Fetch specializations when course and semester change - with memoization
+  // Fetch specializations when course and semester change
   useEffect(() => {
     if (course && semester && courseConfig[course]) {
       const specializationKey = `${course}-${semester}`;
 
-      // Check if we already fetched specializations for this course/semester combo
       if (fetchedSpecializations.current !== specializationKey) {
         fetchSpecializations(course, semester, courseConfig)
           .then(() => {
             fetchedSpecializations.current = specializationKey;
           })
-          .catch(error => {
+          .catch(() => {
             showAlert("Failed to fetch specializations. Please try again.", true);
           });
       }
@@ -185,9 +179,10 @@ const Record = () => {
       fetchedSpecializations.current = null;
       setSpecialization("");
     }
-  }, [course, semester, courseConfig,fetchSpecializations,resetSpecializations]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [course, semester]); // Removed courseConfig, fetchSpecializations, resetSpecializations
 
-  // Fetch subjects when course, semester, or specialization change - with memoization
+  // Fetch subjects when course, semester, or specialization change
   useEffect(() => {
     if (course && semester && courseConfig[course]) {
       const subjectKey = hasSpecializations
@@ -196,7 +191,6 @@ const Record = () => {
 
       if (hasSpecializations) {
         if (specialization) {
-          // Only fetch if we haven't fetched this combination before
           if (fetchedSubjects.current !== subjectKey) {
             fetchSubjects(course, semester, specialization, hasSpecializations, courseConfig)
               .then(subjects => {
@@ -205,12 +199,11 @@ const Record = () => {
                   showAlert("No subjects found for the selected course and semester", true);
                 }
               })
-              .catch(error => {
+              .catch(() => {
                 showAlert("Failed to fetch subjects. Please try again.", true);
               });
           }
         } else {
-          // Only reset if not restoring filters
           if (filtersLoaded.current) {
             resetSubjects();
             setSubject("");
@@ -219,7 +212,6 @@ const Record = () => {
           }
         }
       } else {
-        // Only fetch if we haven't fetched this combination before
         if (fetchedSubjects.current !== subjectKey) {
           fetchSubjects(course, semester, specialization, hasSpecializations, courseConfig)
             .then(subjects => {
@@ -228,13 +220,12 @@ const Record = () => {
                 showAlert("No subjects found for the selected course and semester", true);
               }
             })
-            .catch(error => {
+            .catch(() => {
               showAlert("Failed to fetch subjects. Please try again.", true);
             });
         }
       }
     } else {
-      // Only reset if not during initial load
       if (filtersLoaded.current) {
         resetSubjects();
         setSubject("");
@@ -242,7 +233,8 @@ const Record = () => {
       }
       fetchedSubjects.current = null;
     }
-  }, [course, semester, specialization, hasSpecializations, courseConfig,clearAttendanceSummary,fetchSubjects,resetSubjects]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [course, semester, specialization, hasSpecializations]); // Removed courseConfig, clearAttendanceSummary, fetchSubjects, resetSubjects
 
   // Load saved filters on component mount
   useEffect(() => {
@@ -252,7 +244,6 @@ const Record = () => {
     if (savedFilters.course && !filtersLoaded.current) {
       console.log("Restoring saved filters");
 
-      // Reset fetch tracking to allow fresh fetches for restored filters
       fetchedSemesters.current = null;
       fetchedSpecializations.current = null;
       fetchedSubjects.current = null;
@@ -279,30 +270,24 @@ const Record = () => {
         setSubject(savedFilters.subject);
       }
 
-      // Restore date filters if saved
       if (savedFilters.startDate && savedFilters.endDate) {
         setStartDate(savedFilters.startDate);
         setEndDate(savedFilters.endDate);
       }
 
-      // Set flag to fetch data if coming from detail page
       if (location.state?.returnFromDetail) {
         console.log("Returning from detail page, will fetch data");
         shouldFetchData.current = true;
       }
 
-      // Use setTimeout to mark filters as loaded after React finishes rendering
-      // and all API calls (semesters, specializations, subjects) complete
       setTimeout(() => {
         filtersLoaded.current = true;
         console.log("Filters marked as loaded");
-        // Trigger the fetch check
         if (shouldFetchData.current) {
           setFiltersReadyForFetch(true);
         }
       }, 500);
     } else if (!savedFilters.course) {
-      // If no saved filters, mark as loaded immediately
       filtersLoaded.current = true;
     }
   }, [location.state]);
@@ -324,17 +309,20 @@ const Record = () => {
     });
 
     return result;
-  },[course,
-      semester,
-      subject,
-      academicYear,
-      specialization,
-      section,
-      startDate,
-      endDate,
-      subjects,
-      hasSpecializations,fetchAttendanceSummary])
-
+  }, [
+    course,
+    semester,
+    subject,
+    academicYear,
+    specialization,
+    section,
+    startDate,
+    endDate,
+    subjects,
+    hasSpecializations,
+    fetchAttendanceSummary,
+    showAlert
+  ]);
 
   // Auto-fetch effect - triggers when filters are ready
   useEffect(() => {
@@ -343,11 +331,9 @@ const Record = () => {
     const allFiltersSelected = course && semester && subject && academicYear &&
       (!hasSpecializations || specialization);
 
-    // Check if subjects array has loaded and includes the selected subject
     const subjectIsReady = subjects.length > 0 &&
       subjects.some(s => (s.Sub_Code || s._id) === subject);
 
-    // Also check that we're not currently loading subjects
     const notLoadingSubjects = !loadingSubjects;
 
     console.log("Auto-fetch triggered by filtersReadyForFetch:", {
@@ -367,11 +353,22 @@ const Record = () => {
     if (allFiltersSelected && subjectIsReady && notLoadingSubjects) {
       console.log("Executing auto-fetch now!");
       handleFetchAttendanceSummary();
-      // Reset the flag
       setFiltersReadyForFetch(false);
       shouldFetchData.current = false;
     }
-  }, [filtersReadyForFetch, subjects, loadingSubjects,academicYear,course,handleFetchAttendanceSummary,hasSpecializations,section,semester,specialization,subject]);
+  }, [
+    filtersReadyForFetch,
+    subjects,
+    loadingSubjects,
+    academicYear,
+    course,
+    handleFetchAttendanceSummary,
+    hasSpecializations,
+    section,
+    semester,
+    specialization,
+    subject
+  ]);
 
   // Save filters to localStorage whenever they change
   useEffect(() => {
@@ -391,7 +388,7 @@ const Record = () => {
     }
   }, [course, semester, subject, academicYear, specialization, section, startDate, endDate]);
 
-  const handleCourseChange = (e) => {
+  const handleCourseChange = useCallback((e) => {
     const newCourse = e.target.value;
     setCourse(newCourse);
     setSemester("");
@@ -399,64 +396,56 @@ const Record = () => {
     setSection("");
     setSubject("");
 
-    // Clear the fetch tracking when user manually changes course
     fetchedSemesters.current = null;
     fetchedSpecializations.current = null;
     fetchedSubjects.current = null;
 
-    // Only clear and reset if user is manually changing
     if (filtersLoaded.current) {
       clearAttendanceSummary();
       resetSubjects();
       resetSpecializations();
     }
-  };
+  }, [clearAttendanceSummary, resetSubjects, resetSpecializations]);
 
-  const handleSemesterChange = (e) => {
+  const handleSemesterChange = useCallback((e) => {
     setSemester(e.target.value);
     setSubject("");
     setSpecialization("");
     setSection("");
 
-    // Only clear if user is manually changing (not during filter restoration)
     if (filtersLoaded.current) {
       clearAttendanceSummary();
     }
-  };
+  }, [clearAttendanceSummary]);
 
-  const handleSpecializationChange = (e) => {
+  const handleSpecializationChange = useCallback((e) => {
     setSpecialization(e.target.value);
     setSubject("");
 
-    // Only clear if user is manually changing (not during filter restoration)
     if (filtersLoaded.current) {
       clearAttendanceSummary();
     }
-  };
+  }, [clearAttendanceSummary]);
 
-  const handleSectionChange = (e) => {
+  const handleSectionChange = useCallback((e) => {
     setSection(e.target.value);
-    // Only clear if user is manually changing (not during filter restoration)
     if (filtersLoaded.current) {
       clearAttendanceSummary();
     }
-  };
+  }, [clearAttendanceSummary]);
 
-  const handleSubjectChange = (e) => {
+  const handleSubjectChange = useCallback((e) => {
     setSubject(e.target.value);
-  };
+  }, []);
 
-  const handleAcademicYearChange = (e) => {
+  const handleAcademicYearChange = useCallback((e) => {
     setAcademicYear(e.target.value);
-  };
+  }, []);
 
-  
-  const handleDateFilterApply = async (newStartDate, newEndDate) => {
-    // Update state first
+  const handleDateFilterApply = useCallback(async (newStartDate, newEndDate) => {
     setStartDate(newStartDate);
     setEndDate(newEndDate);
 
-    // Save date filter to localStorage
     const savedFilters = JSON.parse(localStorage.getItem("attendanceFilters")) || {};
     const updatedFilters = {
       ...savedFilters,
@@ -465,7 +454,6 @@ const Record = () => {
     };
     localStorage.setItem("attendanceFilters", JSON.stringify(updatedFilters));
 
-    // If we have the required filters, refetch with NEW date filter values
     if (course && semester && subject && academicYear) {
       await fetchWithDateFilter({
         course,
@@ -479,27 +467,34 @@ const Record = () => {
         onError: showAlert
       }, newStartDate, newEndDate);
     }
-  };
+  }, [
+    course,
+    semester,
+    subject,
+    academicYear,
+    specialization,
+    section,
+    subjects,
+    hasSpecializations,
+    fetchWithDateFilter,
+    showAlert
+  ]);
 
-  // Navigate to student detail page with section support
-  const viewStudentDetail = (studentId) => {
+  const viewStudentDetail = useCallback((studentId) => {
     const navigationState = {
       subject: subject.trim(),
       semester: semester,
       academicYear: academicYear,
     };
 
-    // Add specialization to navigation state if required
     if (hasSpecializations && specialization) {
       navigationState.specialization = specialization;
     }
 
-    // Add section to navigation state if selected
     if (section) {
       navigationState.section = section;
     }
 
-    // Add date filters to navigation state if they exist
     if (startDate && endDate) {
       navigationState.startDate = startDate;
       navigationState.endDate = endDate;
@@ -508,11 +503,9 @@ const Record = () => {
     navigate(`/student/${studentId}`, {
       state: navigationState,
     });
-  };
+  }, [subject, semester, academicYear, hasSpecializations, specialization, section, startDate, endDate, navigate]);
 
-
-
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     if (theme === "light" || !theme) {
       setTheme("dark");
       localStorage.setItem("theme", "dark");
@@ -520,10 +513,7 @@ const Record = () => {
       setTheme("light");
       localStorage.setItem("theme", "light");
     }
-  };
-
-  // Get attendance statistics for display
-  
+  }, [theme]);
 
   return (
     <div className={`record_container ${theme}`}>

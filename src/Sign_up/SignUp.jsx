@@ -24,7 +24,7 @@ const SignUp = () => {
   const [isFirstClick, setIsFirstClick] = useState(true); // Track if it is the first click
   const [d1, setDisplay1] = useState(false); // Toggle password visibility
   const [d2, setDisplay2] = useState(false); // Toggle confirm password visibility
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light'); // Initialize theme from local storage
+  const [theme] = useState(localStorage.getItem('theme') || 'light'); // Initialize theme from local storage
 
   useEffect(() => {
     setTimeout(() => {

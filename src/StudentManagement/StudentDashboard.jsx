@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { PlusCircle, Search, Filter } from "lucide-react";
 import "./StudentDashboard.css";
 import Navbar from "../Navbar/Navbar";
@@ -34,7 +34,6 @@ const StudentDashboard = () => {
   const [promoteModalOpen, setPromoteModalOpen] = useState(false);
   const [promoteLoading, setPromoteLoading] = useState(false);
 
-
   const token = localStorage.getItem("token");
 
   // Custom hooks
@@ -47,33 +46,30 @@ const StudentDashboard = () => {
     resetSpecializations
   } = useSpecializations();
 
-  // Section options - default
-  const sectionOptions = [
+  // Memoized section options
+  const sectionOptions = useMemo(() => [
     { value: "A", label: "A" },
     { value: "B", label: "B" }
-  ];
+  ], []);
 
-  // Special section options for MBA(MS) 2yrs semester 1
-  const mbaSem1SectionOptions = [
+  const mbaSem1SectionOptions = useMemo(() => [
     { value: "A", label: "A" },
     { value: "B", label: "B" },
     { value: "C", label: "C" }
-  ];
+  ], []);
 
-  // Get section options based on course and semester
-  const getSectionOptions = (courseKey, semesterNum) => {
+  // Memoized helper functions
+  const getSectionOptions = useCallback((courseKey, semesterNum) => {
     if (
       courseKey === "MBA(MS)2Years" &&
       (parseInt(semesterNum) === 1 || parseInt(semesterNum) === 2)
     ) {
       return mbaSem1SectionOptions;
     }
-
     return sectionOptions;
-  };
+  }, [sectionOptions, mbaSem1SectionOptions]);
 
-  // Function to get available semesters based on course configuration from API
-  const getAvailableSemesters = (courseKey) => {
+  const getAvailableSemesters = useCallback((courseKey) => {
     if (!courseKey || !courseConfig[courseKey]) return [];
 
     const config = courseConfig[courseKey];
@@ -84,15 +80,20 @@ const StudentDashboard = () => {
       availableSems.push(i);
     }
     return availableSems;
-  };
+  }, [courseConfig]);
 
-  // Helper function to convert empty strings to null for backend
-  const convertEmptyToNull = (value) => {
+  const convertEmptyToNull = useCallback((value) => {
     if (value === "" || value === undefined) return null;
     return value;
-  };
+  }, []);
 
-  // Handle course change
+  const showAlert = useCallback((msg, error = false) => {
+    setModalMessage(msg);
+    setIsError(error);
+    setIsModalOpen(true);
+  }, []);
+
+  // Handle course change - fetch semesters
   useEffect(() => {
     if (course && courseConfig[course]) {
       const semesters = getAvailableSemesters(course);
@@ -106,7 +107,8 @@ const StudentDashboard = () => {
       setSpecialization("");
       resetSpecializations();
     }
-  }, [course, courseConfig,getAvailableSemesters,resetSpecializations,semester]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [course, semester]); // Removed getAvailableSemesters, resetSpecializations, courseConfig
 
   // Handle section options based on course and semester
   useEffect(() => {
@@ -120,22 +122,23 @@ const StudentDashboard = () => {
     } else {
       setAvailableSectionOptions(sectionOptions);
     }
-  }, [course, semester,getSectionOptions,section,sectionOptions]);
+  }, [course, semester, section, getSectionOptions, sectionOptions]);
 
   // Fetch specializations when course and semester change
   useEffect(() => {
     if (course && semester && courseConfig[course]) {
       fetchSpecializations(course, semester, courseConfig)
-        .catch(error => {
+        .catch(() => {
           showAlert("Failed to fetch specializations. Please try again.", true);
         });
     } else {
       resetSpecializations();
       setSpecialization("");
     }
-  }, [course, semester, courseConfig,fetchSpecializations,resetSpecializations]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [course, semester]); // Removed courseConfig, fetchSpecializations, resetSpecializations
 
-  // Clear students when relevant filters change
+  // Clear students when specialization is required but not selected
   useEffect(() => {
     if (hasSpecializations && !specialization) {
       setStudents([]);
@@ -155,103 +158,29 @@ const StudentDashboard = () => {
       setFilteredStudents(filtered);
     }
   }, [students, searchTerm]);
+
+  // Clear selected students when students list changes
   useEffect(() => {
     setSelectedStudents([]);
   }, [students]);
 
-  const toggleStudentSelection = (studentId) => {
+  const toggleStudentSelection = useCallback((studentId) => {
     setSelectedStudents((prev) =>
       prev.includes(studentId)
         ? prev.filter((id) => id !== studentId)
         : [...prev, studentId]
     );
-  };
+  }, []);
 
-  const handleSelectAll = () => {
+  const handleSelectAll = useCallback(() => {
     if (selectedStudents.length === filteredStudents.length) {
       setSelectedStudents([]);
     } else {
       setSelectedStudents(filteredStudents.map((s) => s.id));
     }
-  };
+  }, [selectedStudents.length, filteredStudents]);
 
-  const executePromotion = async (promoteToNextYear) => {
-    if (selectedStudents.length === 0) {
-      showAlert("Please select students to promote", true);
-      return;
-    }
-
-    setPromoteLoading(true);
-
-    try {
-      await axios.post(
-        `${process.env.REACT_APP_BACKEND_URL}/student/students/promote`,
-        {
-          studentIds: selectedStudents,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      showAlert(
-        `students promoted successfully`,
-        false
-      );
-
-      setPromoteModalOpen(false);
-      setSelectedStudents([]);
-      fetchStudents();
-
-    } catch (error) {
-      console.error("Promotion error:", error);
-      showAlert(
-        error?.response?.data?.message || "Failed to promote students",
-        true
-      );
-    } finally {
-      setPromoteLoading(false);
-    }
-  };
-
-
-
-
-  const showAlert = (msg, error = false) => {
-    setModalMessage(msg);
-    setIsError(error);
-    setIsModalOpen(true);
-  };
-
-  const handleCourseChange = (e) => {
-    setCourse(e.target.value);
-    setSemester("");
-    setStudents([]);
-    setSpecialization("");
-    setSection("");
-    resetSpecializations();
-  };
-
-  const handleSemesterChange = (e) => {
-    setSemester(e.target.value);
-    setStudents([]);
-    setSpecialization("");
-    setSection("");
-  };
-
-  const handleSpecializationChange = (e) => {
-    setSpecialization(e.target.value);
-    setStudents([]);
-  };
-
-  const handleSectionChange = (e) => {
-    setSection(e.target.value);
-    setStudents([]);
-  };
-
-  const fetchStudents = async () => {
+  const fetchStudents = useCallback(async () => {
     if (!course || !semester || !courseConfig[course]) {
       showAlert("Please select Course and Semester", true);
       return;
@@ -307,19 +236,45 @@ const StudentDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [course, semester, section, specialization, hasSpecializations, courseConfig, token, showAlert]);
 
-  const handleAddStudentSuccess = () => {
-    setShowAddForm(false);
-    // Refresh the student list
-    fetchStudents();
-  };
+  const executePromotion = useCallback(async (promoteToNextYear) => {
+    if (selectedStudents.length === 0) {
+      showAlert("Please select students to promote", true);
+      return;
+    }
 
-  const handleAddStudentCancel = () => {
-    setShowAddForm(false);
-  };
+    setPromoteLoading(true);
 
-  const executeRollback = async (resetAttendance) => {
+    try {
+      await axios.post(
+        `${process.env.REACT_APP_BACKEND_URL}/student/students/promote`,
+        {
+          studentIds: selectedStudents,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      showAlert("Students promoted successfully", false);
+      setPromoteModalOpen(false);
+      setSelectedStudents([]);
+      fetchStudents();
+    } catch (error) {
+      console.error("Promotion error:", error);
+      showAlert(
+        error?.response?.data?.message || "Failed to promote students",
+        true
+      );
+    } finally {
+      setPromoteLoading(false);
+    }
+  }, [selectedStudents, token, showAlert, fetchStudents]);
+
+  const executeRollback = useCallback(async (resetAttendance) => {
     if (selectedStudents.length === 0) {
       showAlert("Please select students to rollback", true);
       return;
@@ -349,7 +304,6 @@ const StudentDashboard = () => {
       setRollbackModalOpen(false);
       setSelectedStudents([]);
       fetchStudents();
-
     } catch (error) {
       console.error("Rollback error:", error);
       showAlert(
@@ -359,14 +313,47 @@ const StudentDashboard = () => {
     } finally {
       setRollbackLoading(false);
     }
-  };
+  }, [selectedStudents, token, showAlert, fetchStudents]);
 
+  const handleCourseChange = useCallback((e) => {
+    setCourse(e.target.value);
+    setSemester("");
+    setStudents([]);
+    setSpecialization("");
+    setSection("");
+    resetSpecializations();
+  }, [resetSpecializations]);
 
-  const handleEditStudent = async (studentId, editedData) => {
+  const handleSemesterChange = useCallback((e) => {
+    setSemester(e.target.value);
+    setStudents([]);
+    setSpecialization("");
+    setSection("");
+  }, []);
+
+  const handleSpecializationChange = useCallback((e) => {
+    setSpecialization(e.target.value);
+    setStudents([]);
+  }, []);
+
+  const handleSectionChange = useCallback((e) => {
+    setSection(e.target.value);
+    setStudents([]);
+  }, []);
+
+  const handleAddStudentSuccess = useCallback(() => {
+    setShowAddForm(false);
+    fetchStudents();
+  }, [fetchStudents]);
+
+  const handleAddStudentCancel = useCallback(() => {
+    setShowAddForm(false);
+  }, []);
+
+  const handleEditStudent = useCallback(async (studentId, editedData) => {
     setLoading(true);
 
     try {
-      // Process specializations
       let specializations = null;
       if (editedData.specialization && Array.isArray(editedData.specialization) && editedData.specialization.length > 0) {
         const filteredSpecs = editedData.specialization.filter(spec => spec !== "" && spec !== null && spec !== undefined);
@@ -393,16 +380,16 @@ const StudentDashboard = () => {
       );
 
       showAlert("Student updated successfully!", false);
-      fetchStudents(); // Refresh the student list
+      fetchStudents();
     } catch (error) {
       console.error("Error updating student:", error);
       showAlert("Failed to update student. Please try again.", true);
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, convertEmptyToNull, showAlert, fetchStudents]);
 
-  const handleDeleteStudent = async (studentId) => {
+  const handleDeleteStudent = useCallback(async (studentId) => {
     if (!window.confirm("Are you sure you want to delete this student?")) {
       return;
     }
@@ -420,16 +407,16 @@ const StudentDashboard = () => {
       );
 
       showAlert("Student deleted successfully!", false);
-      fetchStudents(); // Refresh the student list
+      fetchStudents();
     } catch (error) {
       console.error("Error deleting student:", error);
       showAlert("Failed to delete student. Please try again.", true);
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, showAlert, fetchStudents]);
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     if (theme === "light" || !theme) {
       setTheme("dark");
       localStorage.setItem("theme", "dark");
@@ -437,7 +424,7 @@ const StudentDashboard = () => {
       setTheme("light");
       localStorage.setItem("theme", "light");
     }
-  };
+  }, [theme]);
 
   return (
     <div className={`studentdashboard_container ${theme}`}>
@@ -469,8 +456,6 @@ const StudentDashboard = () => {
         selectedCount={selectedStudents.length}
         theme={theme}
       />
-
-
 
       <div className="studentdashboard_section">
         <div className="studentdashboard_header">
@@ -616,7 +601,6 @@ const StudentDashboard = () => {
                 Promote to Next Semester
               </button>
 
-
               <button
                 className="studentdashboard_btn_fetch"
                 onClick={() => {
@@ -626,6 +610,7 @@ const StudentDashboard = () => {
                   }
                   setRollbackModalOpen(true);
                 }}
+                disabled={selectedStudents.length === 0}
                 style={{
                   backgroundColor: "#dc2626",
                   color: "#fff",
@@ -634,7 +619,6 @@ const StudentDashboard = () => {
               >
                 Rollback Promotion
               </button>
-
             </div>
             <div className="studentdashboard_search_bar">
               <Search className="studentdashboard_search_icon" />
@@ -648,7 +632,6 @@ const StudentDashboard = () => {
             </div>
           </div>
         )}
-
 
         {/* Add Student Form */}
         {showAddForm && (
@@ -693,7 +676,6 @@ const StudentDashboard = () => {
                   onDelete={handleDeleteStudent}
                   onSave={handleEditStudent}
                 />
-
               ))}
             </div>
           </div>

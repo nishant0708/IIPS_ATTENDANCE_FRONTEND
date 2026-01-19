@@ -12,7 +12,7 @@ const VerifyOtp = () => {
   const [isAlertOpen, setIsAlertOpen] = useState(false); // Modal for success/error messages
   const [alertMessage, setAlertMessage] = useState("");
   const [isErrorAlert, setIsErrorAlert] = useState(false);
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light'); // Initialize theme from local storage
+  const [theme] = useState(localStorage.getItem('theme') || 'light'); // Initialize theme from local storage
   const navigate = useNavigate();
 
   useEffect(() => {

@@ -1,22 +1,24 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 
 export const useAttendance = () => {
   const [courseConfig, setCourseConfig] = useState({});
   const [loadingCourses, setLoadingCourses] = useState(false);
-  const token = localStorage.getItem("token");
-  const teacherId = localStorage.getItem("teacherId");  
+  
+  // Use refs to avoid dependency issues with values from localStorage
+  const tokenRef = useRef(localStorage.getItem("token"));
+  const teacherIdRef = useRef(localStorage.getItem("teacherId"));
 
   const fetchCourses = useCallback(async () => {
     setLoadingCourses(true);
     try {
       const response = await axios.post(
         `${process.env.REACT_APP_BACKEND_URL}/attendance`,
-         {
-          teacherId: teacherId
+        {
+          teacherId: teacherIdRef.current
         },
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${tokenRef.current}` },
         }
       );
 
@@ -32,7 +34,7 @@ export const useAttendance = () => {
     } finally {
       setLoadingCourses(false);
     }
-  },[teacherId,token])
+  }, []); // Empty dependency array since we're using refs
 
   useEffect(() => {
     fetchCourses();
