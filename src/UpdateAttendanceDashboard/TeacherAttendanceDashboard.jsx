@@ -31,7 +31,7 @@ const TeacherAttendanceDashboard = () => {
 
   useEffect(() => {
     fetchAttendances();
-  }, [page]);
+  }, [page,fetchAttendances]);
 
   const toggleTheme = () => {
     setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');

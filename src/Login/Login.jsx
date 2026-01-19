@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "./Login.css";
 import logo from "../Assets/iips_logo2.png";
 import { FaEye } from "react-icons/fa";
@@ -15,9 +15,12 @@ function Login() {
   const [isError, setIsError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+  const [theme] = useState(localStorage.getItem('theme') || 'light');
   const navigate = useNavigate();
-
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem("sessionId");
+    navigate("/");
+  },[navigate])
   useEffect(() => {
     document.title = "IIPS||Attendence";
 
@@ -36,7 +39,7 @@ function Login() {
         })
         .catch(() => handleLogout());
     }
-  }, [navigate]);
+  }, [navigate,handleLogout]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -76,10 +79,7 @@ function Login() {
       });
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("sessionId");
-    navigate("/");
-  };
+
 
   const handleCloseModal = () => {
     setModalIsOpen(false);

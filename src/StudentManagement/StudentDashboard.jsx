@@ -20,7 +20,6 @@ const StudentDashboard = () => {
   const [students, setStudents] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [isError, setIsError] = useState(false);
@@ -30,7 +29,6 @@ const StudentDashboard = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [availableSectionOptions, setAvailableSectionOptions] = useState([]);
   const [selectedStudents, setSelectedStudents] = useState([]);
-  const [promoting, setPromoting] = useState(false);
   const [rollbackModalOpen, setRollbackModalOpen] = useState(false);
   const [rollbackLoading, setRollbackLoading] = useState(false);
   const [promoteModalOpen, setPromoteModalOpen] = useState(false);
@@ -108,7 +106,7 @@ const StudentDashboard = () => {
       setSpecialization("");
       resetSpecializations();
     }
-  }, [course, courseConfig]);
+  }, [course, courseConfig,getAvailableSemesters,resetSpecializations,semester]);
 
   // Handle section options based on course and semester
   useEffect(() => {
@@ -122,7 +120,7 @@ const StudentDashboard = () => {
     } else {
       setAvailableSectionOptions(sectionOptions);
     }
-  }, [course, semester]);
+  }, [course, semester,getSectionOptions,section,sectionOptions]);
 
   // Fetch specializations when course and semester change
   useEffect(() => {
@@ -135,7 +133,7 @@ const StudentDashboard = () => {
       resetSpecializations();
       setSpecialization("");
     }
-  }, [course, semester, courseConfig]);
+  }, [course, semester, courseConfig,fetchSpecializations,resetSpecializations]);
 
   // Clear students when relevant filters change
   useEffect(() => {
@@ -186,7 +184,7 @@ const StudentDashboard = () => {
     setPromoteLoading(true);
 
     try {
-      const response = await axios.post(
+      await axios.post(
         `${process.env.REACT_APP_BACKEND_URL}/student/students/promote`,
         {
           studentIds: selectedStudents,
