@@ -177,7 +177,7 @@ const fetchAllSubjects = async () => {
   useEffect(() => {
     fetchTeachers();
     fetchAllSubjects();
-  }, [fetchAllSubjects,fetchTeachers]);
+  }, []);
 
   const showAlert = (msg, error = false) => {
     setModalMessage(msg);

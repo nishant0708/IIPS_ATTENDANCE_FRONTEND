@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import "./Dashboard.css";
 import Navbar from "../Navbar/Navbar";
 import axios from "axios";
@@ -40,31 +40,25 @@ const Dashboard = () => {
   } = useSpecializations();
 
   // Section options - default
-  const sectionOptions = useMemo(() => ([
+  const sectionOptions = [
     { value: "A", label: "A" },
     { value: "B", label: "B" },
-  ]), [])
+  ];
 
   // Special section options for MBA(MS) 2yrs semester 1
-  const mbaSem1SectionOptions = useMemo(() => ([
+  const mbaSem1SectionOptions = [
     { value: "A", label: "A" },
     { value: "B", label: "B" },
-    { value: "C", label: "C" }
-  ]), [])
+    { value: "C", label: "C" },
+  ];
 
   // Get section options based on course and semester
-  const getSectionOptions = useCallback((courseKey, semesterNum) => {
-    console.log(courseKey, semesterNum)
-    if (
-      courseKey === "MBA(MS)2Years" &&
-      (parseInt(semesterNum) === 1 || parseInt(semesterNum) === 2)
-    ) {
-      return mbaSem1SectionOptions;
-    }
-
-    return sectionOptions;
-  }, [sectionOptions, mbaSem1SectionOptions])
-
+ const getSectionOptions = (courseKey, semesterNum) => {
+  if (courseKey === "MBA(MS)2Years" && (parseInt(semesterNum) === 1 || parseInt(semesterNum) === 2)) {
+    return mbaSem1SectionOptions;
+  }
+  return sectionOptions;
+};
   // Get current date in IST format
   const getCurrentDateIST = () => {
     const now = new Date();
@@ -124,7 +118,7 @@ const Dashboard = () => {
       setSpecialization("");
       resetSpecializations();
     }
-  }, [course, courseConfig, fetchSemesters, resetSemesters, resetSpecializations, resetSubjects, semester]);
+  }, [course, courseConfig, fetchSemesters]);
 
   // Handle section options based on course and semester
   useEffect(() => {
@@ -138,7 +132,7 @@ const Dashboard = () => {
     } else {
       setAvailableSectionOptions(sectionOptions);
     }
-  }, [course, semester, getSectionOptions, section, sectionOptions]);
+  }, [course, semester]);
 
   // Fetch specializations when course and semester change
   useEffect(() => {
@@ -150,7 +144,7 @@ const Dashboard = () => {
       resetSpecializations();
       setSpecialization("");
     }
-  }, [course, semester, courseConfig, fetchSpecializations, resetSpecializations]);
+  }, [course, semester, courseConfig]);
 
   // Fetch subjects when course, semester, or specialization change
   useEffect(() => {
@@ -207,7 +201,7 @@ const Dashboard = () => {
       setSubject("");
       setStudents([]);
     }
-  }, [course, semester, specialization, hasSpecializations, courseConfig, fetchSubjects, resetSubjects]);
+  }, [course, semester, specialization, hasSpecializations, courseConfig]);
 
   const handleCourseChange = (e) => {
     setCourse(e.target.value);
