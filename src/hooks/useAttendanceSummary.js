@@ -54,16 +54,32 @@ export const useAttendanceSummary = () => {
     setLoading(true);
     setError(null);
 
+    const normalizeAcademicYear = (year) => {
+      // "2025-2026" → "2025-26"
+      if (/^\d{4}-\d{4}$/.test(year)) {
+        const [start, end] = year.split("-");
+        return `${start}-${end.slice(-2)}`;
+      }
+
+      // already correct: "2025-26"
+      if (/^\d{4}-\d{2}$/.test(year)) {
+        return year;
+      }
+
+      return null; // invalid format
+    };
+
+    const normalizedAcademicYear = normalizeAcademicYear(academicYear)
     try {
       const selectedSubject = subjects.find(
         (s) => s.Sub_Code === subject || s._id === subject
       );
-
+      
       const requestData = {
-        course: selectedSubject?.Course_ID || "", 
+        course: selectedSubject?.Course_ID || "",
         semester,
         subject: subject.trim(),
-        academicYear,
+        academicYear: normalizedAcademicYear,
       };
 
       // Add specialization to request if required
@@ -102,7 +118,7 @@ export const useAttendanceSummary = () => {
       const studentsData = response.data.students || response.data || [];
 
       if (studentsData.length === 0) {
-        const message = startDate && endDate 
+        const message = startDate && endDate
           ? `No attendance records found for the selected criteria between ${startDate} and ${endDate}`
           : "No attendance records found for the selected criteria";
         setError(message);
@@ -118,11 +134,11 @@ export const useAttendanceSummary = () => {
     } catch (error) {
       console.error("Error fetching attendance summary:", error);
       console.error("Error response:", error.response?.data);
-      
-      const errorMsg = error.response?.data?.message || 
-                      error.response?.data?.error || 
-                      "Failed to fetch attendance summary. Please try again.";
-      
+
+      const errorMsg = error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Failed to fetch attendance summary. Please try again.";
+
       setError(errorMsg);
       setAttendanceSummary([]);
       if (onError) onError(errorMsg, true);
@@ -177,10 +193,10 @@ export const useAttendanceSummary = () => {
     const stats = attendanceSummary.reduce((acc, record) => {
       const percentage = parseFloat(calculatePercentage(record.classesAttended, record.totalClasses));
       const status = getAttendanceStatus(record.classesAttended, record.totalClasses);
-      
+
       acc.total++;
       acc.totalPercentage += percentage;
-      
+
       switch (status.toLowerCase()) {
         case 'good':
           acc.good++;
@@ -194,7 +210,7 @@ export const useAttendanceSummary = () => {
         default:
           break;
       }
-      
+
       return acc;
     }, {
       total: 0,
@@ -215,13 +231,13 @@ export const useAttendanceSummary = () => {
     attendanceSummary,
     loading,
     error,
-    
+
     // Functions
     fetchAttendanceSummary,
     fetchWithDateFilter,
     clearAttendanceSummary,
     updateAttendanceSummary,
-    
+
     // Utility functions
     calculatePercentage,
     getAttendanceStatus,
