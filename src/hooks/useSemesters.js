@@ -5,7 +5,10 @@ export const useSemesters = () => {
   const [availableSemesters, setAvailableSemesters] = useState([]);
   const [loadingSemesters, setLoadingSemesters] = useState(false);
   const [semestersError, setSemestersError] = useState(null);
-  const lastFetchedCourse = useRef(null); // Track last fetched to prevent duplicate calls
+  
+  // Store both course and semesters to prevent duplicate calls
+  const lastFetchedCourseRef = useRef(null);
+  const cachedSemestersRef = useRef([]);
 
   const token = localStorage.getItem("token");
   const teacherId = localStorage.getItem("teacherId");
@@ -13,13 +16,14 @@ export const useSemesters = () => {
   const fetchSemesters = useCallback(async (course, courseConfig) => {
     if (!course || !courseConfig || !courseConfig[course]) {
       setAvailableSemesters([]);
+      cachedSemestersRef.current = [];
       return [];
     }
 
-    // Prevent duplicate API calls for the same course
-    if (lastFetchedCourse.current === course && availableSemesters.length > 0) {
-      console.log("Semesters already fetched for", course, "- skipping API call");
-      return availableSemesters;
+    // Prevent duplicate API calls for the same course using ref
+    if (lastFetchedCourseRef.current === course && cachedSemestersRef.current.length > 0) {
+      console.log("Semesters already fetched for", course, "- returning cached");
+      return cachedSemestersRef.current;
     }
 
     setLoadingSemesters(true);
@@ -31,6 +35,7 @@ export const useSemesters = () => {
       if (!courseId) {
         console.error("No courseId found for course:", course);
         setAvailableSemesters([]);
+        cachedSemestersRef.current = [];
         return [];
       }
 
@@ -47,26 +52,30 @@ export const useSemesters = () => {
       if (response.data.success) {
         const semesters = response.data.data.availableSemesters || [];
         setAvailableSemesters(semesters);
-        lastFetchedCourse.current = course; // Mark as fetched
+        cachedSemestersRef.current = semesters; // Cache in ref
+        lastFetchedCourseRef.current = course;
         return semesters;
       } else {
         setAvailableSemesters([]);
+        cachedSemestersRef.current = [];
         return [];
       }
     } catch (error) {
       console.error("Error fetching semesters:", error);
       setSemestersError(error.message || "Failed to fetch semesters");
       setAvailableSemesters([]);
+      cachedSemestersRef.current = [];
       return [];
     } finally {
       setLoadingSemesters(false);
     }
-  }, [token, teacherId, availableSemesters]);
+  }, [token, teacherId]); // FIXED: Removed availableSemesters from dependencies
 
   const resetSemesters = useCallback(() => {
     setAvailableSemesters([]);
     setSemestersError(null);
-    lastFetchedCourse.current = null; // Reset tracking
+    lastFetchedCourseRef.current = null;
+    cachedSemestersRef.current = []; // Reset cache
   }, []);
 
   return {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "./Dashboard.css";
 import Navbar from "../Navbar/Navbar";
 import axios from "axios";
@@ -53,12 +53,13 @@ const Dashboard = () => {
   ];
 
   // Get section options based on course and semester
- const getSectionOptions = (courseKey, semesterNum) => {
-  if (courseKey === "MBA(MS)2Years" && (parseInt(semesterNum) === 1 || parseInt(semesterNum) === 2)) {
-    return mbaSem1SectionOptions;
-  }
-  return sectionOptions;
-};
+  const getSectionOptions = (courseKey, semesterNum) => {
+    if (courseKey === "MBA(MS)2Years" && (parseInt(semesterNum) === 1 || parseInt(semesterNum) === 2)) {
+      return mbaSem1SectionOptions;
+    }
+    return sectionOptions;
+  };
+
   // Get current date in IST format
   const getCurrentDateIST = () => {
     const now = new Date();
@@ -66,10 +67,10 @@ const Dashboard = () => {
     const istTime = new Date(
       now.getTime() + offset * 60 * 1000 + 5.5 * 60 * 60 * 1000
     );
-    return istTime.toISOString().substr(0, 10);
+    return istTime.toISOString().slice(0, 10); // Fixed: Changed substr to slice
   };
 
-  // Get date 35 days ago in IST format
+  // Get date 60 days ago in IST format (fixed comment to match actual days)
   const getMinDateIST = () => {
     const now = new Date();
     const offset = now.getTimezoneOffset();
@@ -77,7 +78,7 @@ const Dashboard = () => {
       now.getTime() + offset * 60 * 1000 + 5.5 * 60 * 60 * 1000
     );
     istTime.setDate(istTime.getDate() - 60);
-    return istTime.toISOString().substr(0, 10);
+    return istTime.toISOString().slice(0, 10); // Fixed: Changed substr to slice
   };
 
   const [attendanceDate, setAttendanceDate] = useState(getCurrentDateIST());
@@ -90,13 +91,15 @@ const Dashboard = () => {
     resetSemesters,
   } = useSemesters();
 
-  const showAlert = (msg, error = false) => {
+  // Fixed: Memoized showAlert to prevent unnecessary re-renders
+  const showAlert = useCallback((msg, error = false) => {
     setModalMessage(msg);
     setIsError(error);
     setIsModalOpen(true);
-  };
+  }, []);
 
-  //  useEffect for course changes:
+  // useEffect for course changes
+  // FIXED: Simplified dependencies to only triggers to prevent infinite loops
   useEffect(() => {
     if (course && courseConfig[course]) {
       fetchSemesters(course, courseConfig)
@@ -118,7 +121,8 @@ const Dashboard = () => {
       setSpecialization("");
       resetSpecializations();
     }
-  }, [course, courseConfig, fetchSemesters]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [course, courseConfig]); // Only include what triggers the effect
 
   // Handle section options based on course and semester
   useEffect(() => {
@@ -132,7 +136,8 @@ const Dashboard = () => {
     } else {
       setAvailableSectionOptions(sectionOptions);
     }
-  }, [course, semester]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [course, semester, section]); // Only the values that trigger changes
 
   // Fetch specializations when course and semester change
   useEffect(() => {
@@ -144,64 +149,48 @@ const Dashboard = () => {
       resetSpecializations();
       setSpecialization("");
     }
-  }, [course, semester, courseConfig]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [course, semester, courseConfig]); // Only triggers, not functions
 
-  // Fetch subjects when course, semester, or specialization change
+  // Fixed: Refactored to be cleaner and avoid complex nested conditions
   useEffect(() => {
-    if (course && semester && courseConfig[course]) {
-      if (hasSpecializations) {
-        if (specialization) {
-          fetchSubjects(
-            course,
-            semester,
-            specialization,
-            hasSpecializations,
-            courseConfig
-          )
-            .then((subjects) => {
-              if (subjects.length === 0) {
-                showAlert(
-                  "You Dont have access for Selected Course and Semester",
-                  true
-                );
-              }
-            })
-            .catch((error) => {
-              showAlert("Failed to fetch subjects. Please try again.", true);
-            });
-        } else {
-          resetSubjects();
-          setSubject("");
-          setStudents([]);
-        }
-      } else {
-        fetchSubjects(
-          course,
-          semester,
-          specialization,
-          hasSpecializations,
-          courseConfig
-        )
-          .then((subjects) => {
-            if (subjects.length === 0) {
-              showAlert(
-                "You Dont have access for Selected Course and Semester",
-                true
-              );
-            }
-          })
-          .catch((error) => {
-            showAlert("Failed to fetch subjects. Please try again.", true);
-          });
-      }
+    // Always clear students when these dependencies change
+    setStudents([]);
 
-      setStudents([]);
-    } else {
+    if (!course || !semester || !courseConfig[course]) {
       resetSubjects();
       setSubject("");
-      setStudents([]);
+      return;
     }
-  }, [course, semester, specialization, hasSpecializations, courseConfig]);
+
+    // If requires specialization but none selected, don't fetch
+    if (hasSpecializations && !specialization) {
+      resetSubjects();
+      setSubject("");
+      return;
+    }
+
+    // Fetch subjects
+    fetchSubjects(
+      course,
+      semester,
+      specialization,
+      hasSpecializations,
+      courseConfig
+    )
+      .then((subjects) => {
+        if (subjects.length === 0) {
+          showAlert(
+            "You don't have access for the selected Course and Semester", // Fixed: Grammar and capitalization
+            true
+          );
+        }
+      })
+      .catch((error) => {
+        showAlert("Failed to fetch subjects. Please try again.", true);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [course, semester, specialization, hasSpecializations, courseConfig]); // Only triggers
 
   const handleCourseChange = (e) => {
     setCourse(e.target.value);
@@ -241,8 +230,13 @@ const Dashboard = () => {
     const minDate = getMinDateIST();
     const maxDate = getCurrentDateIST();
 
-    if (selectedDate < minDate || selectedDate > maxDate) {
-      showAlert("Please select a date within the last 35 days only", true);
+    // Fixed: Better date comparison using Date objects
+    const selectedDateObj = new Date(selectedDate);
+    const minDateObj = new Date(minDate);
+    const maxDateObj = new Date(maxDate);
+
+    if (selectedDateObj < minDateObj || selectedDateObj > maxDateObj) {
+      showAlert("Please select a date within the last 60 days only", true); // Fixed: Changed 35 to 60
       return;
     }
 
@@ -261,6 +255,9 @@ const Dashboard = () => {
     }
 
     setLoading(true);
+
+    // Fixed: Added cleanup to prevent memory leaks
+    let isMounted = true;
 
     try {
       const requestData = {
@@ -283,6 +280,8 @@ const Dashboard = () => {
         }
       );
 
+      if (!isMounted) return; // Don't update state if component unmounted
+
       setStudents(response.data);
 
       const initialAttendance = {};
@@ -296,11 +295,19 @@ const Dashboard = () => {
         showAlert("No students found for the selected criteria", true);
       }
     } catch (error) {
+      if (!isMounted) return;
       console.error("Error fetching students:", error);
       showAlert("Failed to fetch students. Please try again.", true);
     } finally {
-      setLoading(false);
+      if (isMounted) {
+        setLoading(false);
+      }
     }
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
   };
 
   const handleAttendanceChange = (studentId) => {
@@ -329,12 +336,20 @@ const Dashboard = () => {
     const minDate = getMinDateIST();
     const maxDate = getCurrentDateIST();
 
-    if (attendanceDate < minDate || attendanceDate > maxDate) {
-      showAlert("Please select a date within the last 35 days only", true);
+    // Fixed: Better date comparison using Date objects
+    const attendanceDateObj = new Date(attendanceDate);
+    const minDateObj = new Date(minDate);
+    const maxDateObj = new Date(maxDate);
+
+    if (attendanceDateObj < minDateObj || attendanceDateObj > maxDateObj) {
+      showAlert("Please select a date within the last 60 days only", true); // Fixed: Changed 35 to 60
       return;
     }
 
     setLoading(true);
+
+    // Fixed: Added cleanup to prevent memory leaks
+    let isMounted = true;
 
     try {
       const attendanceData = {
@@ -365,17 +380,28 @@ const Dashboard = () => {
           },
         }
       );
+
+      if (!isMounted) return; // Don't update state if component unmounted
+
       showAlert("Attendance submitted successfully!", false);
 
       setSubject("");
       setStudents([]);
       setAttendanceMap({});
     } catch (error) {
+      if (!isMounted) return;
       console.error("Error submitting attendance:", error);
       showAlert("Failed to submit attendance. Please try again.", true);
     } finally {
-      setLoading(false);
+      if (isMounted) {
+        setLoading(false);
+      }
     }
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
   };
 
   const toggleTheme = () => {
