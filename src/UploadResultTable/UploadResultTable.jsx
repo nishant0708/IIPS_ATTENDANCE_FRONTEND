@@ -18,7 +18,8 @@ const UploadResultsTable = ({ uploadResult, category, theme }) => {
       student: <FaUsers />,
       course: <FaGraduationCap />,
       subject: <FaBook />,
-      teacher: <FaChalkboardTeacher />
+      teacher: <FaChalkboardTeacher />,
+      facultySubject: <FaChalkboardTeacher />
     };
     return iconMap[category] || <FaUsers />;
   };
@@ -28,7 +29,8 @@ const UploadResultsTable = ({ uploadResult, category, theme }) => {
       student: 'Students',
       course: 'Courses',
       subject: 'Subjects',
-      teacher: 'Teachers'
+      teacher: 'Teachers',
+      facultySubject: 'Faculty Subjects'
     };
     return labelMap[category] || 'Items';
   };
@@ -38,7 +40,8 @@ const UploadResultsTable = ({ uploadResult, category, theme }) => {
       student: 'Students',
       course: 'Courses',
       subject: 'Subjects',
-      teacher: 'Teachers'
+      teacher: 'Teachers',
+      facultySubject: 'Teachers'
     };
     return keyMap[category] || 'Items';
   };
@@ -96,9 +99,13 @@ const UploadResultsTable = ({ uploadResult, category, theme }) => {
                         {item.Course_ID && <div><strong>Course:</strong> {item.Course_ID}</div>}
                       </>
                     )}
-                    {category === 'teacher' && (
+                    {(category === 'teacher' || category === 'facultySubject') && (
                       <>
                         {item.email && <div><strong>Email:</strong> {item.email}</div>}
+                        {item.faculty_id && item.faculty_id !== 'N/A' && (
+                          <div><strong>Faculty ID:</strong> {item.faculty_id}</div>
+                        )}
+                        {item.subCode && <div><strong>Subject:</strong> {item.subCode}</div>}
                       </>
                     )}
                   </td>

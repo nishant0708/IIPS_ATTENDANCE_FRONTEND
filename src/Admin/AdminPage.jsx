@@ -144,9 +144,10 @@ const AdminPage = () => {
       icon: <FaChalkboardTeacher />,
       endpoint: "/teacher/upload-teachers",
       requiredFields: ["name", "email", "password"],
-      optionalFields: [],
+      optionalFields: ["faculty_id (or Tid, Teacher_Id)"],
       instructions: {
-        description: "Upload teacher information with login credentials.",
+        description:
+          "Upload teacher/faculty information with login credentials. If a teacher with the same email already exists, their record will be updated.",
         requiredColumns: [
           { name: "name", description: "Full name of the teacher" },
           {
@@ -158,9 +159,44 @@ const AdminPage = () => {
             description: "Initial password (will be hashed)",
           },
         ],
-        optionalColumns: [],
+        optionalColumns: [
+          {
+            name: "faculty_id (or Tid, Teacher_Id)",
+            description: "Unique faculty/teacher ID assigned to the teacher (e.g., 214, FAC001)",
+          },
+        ],
         example:
-          "name,email,password\nDr. John Smith,john.smith@university.edu,password123",
+          "name,email,password,Tid\nDr. John Smith,john.smith@university.edu,password123,214\nDr. Jane Doe,jane.doe@university.edu,pass456,215",
+      },
+    },
+    {
+      value: "facultySubject",
+      label: "Faculty Subjects",
+      icon: <FaChalkboardTeacher />,
+      endpoint: "/teacher/uploadFacultySubjectsFromCSV",
+      requiredFields: ["email", "Sub_Code"],
+      optionalFields: ["faculty_id (or Tid)"],
+      instructions: {
+        description:
+          "Assign subjects to faculty/teachers via CSV. Sub_Code can be comma-separated subject codes (e.g. CS101,IT201) or 'all'.",
+        requiredColumns: [
+          {
+            name: "email",
+            description: "Teacher email address",
+          },
+          {
+            name: "Sub_Code",
+            description: "Subject code(s) comma-separated (e.g., CS101, IT102 or 'all')",
+          },
+        ],
+        optionalColumns: [
+          {
+            name: "faculty_id (or Tid)",
+            description: "Faculty/Teacher ID to assign if not already set",
+          },
+        ],
+        example:
+          "email,Sub_Code,Tid\njohn.smith@university.edu,\"CS101, IT201\",214\njane.doe@university.edu,all,215",
       },
     },
   ];

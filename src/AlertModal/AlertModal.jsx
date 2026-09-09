@@ -87,7 +87,6 @@ const AlertModal = ({ isOpen, onClose, onConfirm, message, iserror, isConfirm, e
 
 // Define prop types
 AlertModal.propTypes = {
-  isAlert: PropTypes.bool.isRequired,
   isOpen: PropTypes.bool.isRequired,  // isOpen should be a boolean
   onClose: PropTypes.func.isRequired, // onClose should be a function
   message: PropTypes.string.isRequired, // message should be a string
